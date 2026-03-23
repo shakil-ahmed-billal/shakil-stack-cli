@@ -1,6 +1,6 @@
 {
   "name": "@shakil-dev/shakil-stack",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Full-stack EchoNet-style project generator CLI",
   "main": "./bin/index.js",
   "bin": {

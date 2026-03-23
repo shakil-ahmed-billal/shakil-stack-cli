@@ -69,6 +69,7 @@ async function main() {
     spinner.text = `📦 Running create-next-app for frontend...`;
     spinner.stop(); 
     
+    // We run create-next-app in the project root to create the 'frontend' folder
     const nextAppCmd = `npx create-next-app@latest frontend --typescript --tailwind --eslint --app --src-dir --import-alias "@/*" --use-${packageManager} --no-git`;
     try {
       execSync(nextAppCmd, { cwd: projectPath, stdio: 'inherit' });
@@ -88,9 +89,9 @@ async function main() {
     // 5. Root Files
     await fs.outputFile(path.join(projectPath, '.env'), 'DATABASE_URL="postgresql://user:password@localhost:5432/mydb"\nPORT=8000\nNODE_ENV=development\nJWT_SECRET="your-secret-key"');
     await fs.outputFile(path.join(projectPath, '.gitignore'), 'node_modules\n.env\ndist\n*.db\n.next\n.DS_Store');
-    await fs.outputFile(path.join(projectPath, 'README.md'), `# ${projectName}\n\nGenerated with Full EchoNet-style CLI.`);
+    await fs.outputFile(path.join(projectPath, 'README.md'), `# ${projectName}\n\nGenerated with Full Shakil-Stack CLI.`);
 
-    // 6. Backend Files (Refined)
+    // 6. Backend Files (Complete EchoNet Clone)
     
     const serverTs = `import { Server } from 'http';
 import app from './app.js';
@@ -304,6 +305,7 @@ export const sanitizeRequest = (req: Request, res: Response, next: NextFunction)
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -344,6 +346,39 @@ model Account {
 }
 `;
 
+    const prismaConfigTs = `import "dotenv/config";
+import { defineConfig } from "prisma/config";
+import process from "process";
+
+export default defineConfig({
+  schema: "prisma/schema.prisma",
+  datasource: {
+    url: process.env.DATABASE_URL,
+  },
+});
+`;
+
+    const tsconfigTs = `{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}
+`;
+
     // Write backend files
     await fs.outputFile(path.join(projectPath, 'backend', 'src', 'server.ts'), serverTs);
     await fs.outputFile(path.join(projectPath, 'backend', 'src', 'app.ts'), appTs);
@@ -358,6 +393,9 @@ model Account {
     await fs.outputFile(path.join(projectPath, 'backend', 'src', 'app', 'utils', 'sanitizer.ts'), sanitizerTs);
     await fs.outputFile(path.join(projectPath, 'backend', 'src', 'app', 'errorHelpers', 'ApiError.ts'), apiErrorTs);
     await fs.outputFile(path.join(projectPath, 'backend', 'prisma', 'schema.prisma'), schemaPrisma);
+    await fs.outputFile(path.join(projectPath, 'backend', 'prisma.config.ts'), prismaConfigTs);
+    await fs.outputFile(path.join(projectPath, 'backend', 'tsconfig.json'), tsconfigTs);
+    await fs.outputFile(path.join(projectPath, 'backend', '.gitignore'), 'node_modules\ndist\n.env');
     await fs.outputFile(path.join(projectPath, 'backend', '.env'), 'DATABASE_URL="postgresql://user:password@localhost:5432/mydb"\nJWT_SECRET="your-secret-key"');
 
     // Backend package.json
