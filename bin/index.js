@@ -623,10 +623,12 @@ export const ${moduleName}Validations = {
 };
 
 // --- CLI Structure ---
+const packageJson = require('../package.json');
+
 program
   .name('shakil-stack')
   .description('Full-stack EchoNet-style project generator CLI')
-  .version('1.0.0');
+  .version(packageJson.version);
 
 program
   .command('init')
