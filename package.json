@@ -25,7 +25,7 @@
   "bugs": {
     "url": "https://github.com/shakil-ahmed-billal/shakil-stack-cli/issues"
   },
-  "homepage": "https://github.com/shakil-ahmed-billal/shakil-stack-cli#readme",
+  "homepage": "https://xhakil.vercel.app/blog/shakil-stack-cli-guide",
   "publishConfig": {
     "access": "public"
   },
