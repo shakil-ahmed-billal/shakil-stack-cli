@@ -24,7 +24,10 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
 
       - name: Install Dependencies
-        run: npm install
+        run: npm ci
+
+      - name: Debug Git Status
+        run: git status
 
       - name: Set Git Identity
         run: |
