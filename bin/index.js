@@ -3,11 +3,30 @@
 const fs = require('fs-extra');
 const path = require('path');
 const { execSync } = require('child_process');
+const { Command } = require('commander');
 const inquirer = require('inquirer');
 const chalk = require('chalk');
 const ora = require('ora');
 
-async function main() {
+const program = new Command();
+
+// --- Utils ---
+const getPackageManager = () => {
+  if (fs.existsSync('pnpm-lock.yaml')) return 'pnpm';
+  if (fs.existsSync('yarn.lock')) return 'yarn';
+  return 'npm';
+};
+
+const runCommand = (command, cwd = process.cwd()) => {
+  try {
+    execSync(command, { stdio: 'inherit', cwd });
+  } catch (err) {
+    // console.error(chalk.red(`Failed to execute: ${command}`));
+  }
+};
+
+// --- Command: Init ---
+const initProject = async (name) => {
   console.log(chalk.cyan('\n🚀 Initializing Shakil-Stack Project Generator...\n'));
 
   const answers = await inquirer.prompt([
@@ -15,7 +34,7 @@ async function main() {
       type: 'input',
       name: 'projectName',
       message: 'What is your project name?',
-      default: 'my-new-project',
+      default: name || 'my-new-project',
       validate: (input) => (input ? true : 'Project name is required'),
     },
     {
@@ -42,12 +61,10 @@ async function main() {
   }
 
   try {
-    // 1. Create Root Directory
     await fs.ensureDir(projectPath);
-
     const spinner = ora(`🚀 Creating project: ${chalk.cyan(projectName)}...`).start();
 
-    // 2. Define Backend Folder Structure
+    // Backend Folder Structure
     const backendDirs = [
       'prisma',
       'src/app/config',
@@ -65,11 +82,9 @@ async function main() {
       await fs.ensureDir(path.join(projectPath, 'backend', dir));
     }
 
-    // 3. Generate Frontend using create-next-app FIRST
+    // Frontend (create-next-app)
     spinner.text = `📦 Running create-next-app for frontend...`;
     spinner.stop(); 
-    
-    // We run create-next-app in the project root to create the 'frontend' folder
     const nextAppCmd = `npx create-next-app@latest frontend --typescript --tailwind --eslint --app --src-dir --import-alias "@/*" --use-${packageManager} --no-git`;
     try {
       execSync(nextAppCmd, { cwd: projectPath, stdio: 'inherit' });
@@ -78,7 +93,7 @@ async function main() {
       await fs.ensureDir(path.join(projectPath, 'frontend'));
     }
 
-    // 4. Create additional frontend folders AFTER create-next-app
+    // Frontend extra folders
     const frontendExtraFolders = ['config', 'hooks', 'lib', 'services', 'types'];
     for (const folder of frontendExtraFolders) {
         await fs.ensureDir(path.join(projectPath, 'frontend', 'src', folder));
@@ -86,13 +101,12 @@ async function main() {
 
     spinner.start(`📂 Finalizing root files and backend code...`);
 
-    // 5. Root Files
+    // Root Files
     await fs.outputFile(path.join(projectPath, '.env'), 'DATABASE_URL="postgresql://user:password@localhost:5432/mydb"\nPORT=8000\nNODE_ENV=development\nJWT_SECRET="your-secret-key"');
     await fs.outputFile(path.join(projectPath, '.gitignore'), 'node_modules\n.env\ndist\n*.db\n.next\n.DS_Store');
     await fs.outputFile(path.join(projectPath, 'README.md'), `# ${projectName}\n\nGenerated with Full Shakil-Stack CLI.`);
 
-    // 6. Backend Files (Complete EchoNet Clone)
-    
+    // Backend Files Templates
     const serverTs = `import { Server } from 'http';
 import app from './app.js';
 import config from './app/config/index.js';
@@ -379,7 +393,33 @@ export default defineConfig({
 }
 `;
 
-    // Write backend files
+    const sendResponseTs = `import { Response } from 'express';
+
+type IResponse<T> = {
+  statusCode: number;
+  success: boolean;
+  message?: string | null;
+  meta?: {
+    limit: number;
+    page: number;
+    total: number;
+  };
+  data: T;
+};
+
+const sendResponse = <T>(res: Response, data: IResponse<T>) => {
+  res.status(data.statusCode).json({
+    success: data.success,
+    message: data.message || null,
+    meta: data.meta || null,
+    data: data.data || null,
+  });
+};
+
+export default sendResponse;
+`;
+
+    // Writing Backend Files
     await fs.outputFile(path.join(projectPath, 'backend', 'src', 'server.ts'), serverTs);
     await fs.outputFile(path.join(projectPath, 'backend', 'src', 'app.ts'), appTs);
     await fs.outputFile(path.join(projectPath, 'backend', 'src', 'app', 'config', 'index.ts'), configTs);
@@ -390,6 +430,7 @@ export default defineConfig({
     await fs.outputFile(path.join(projectPath, 'backend', 'src', 'app', 'middleware', 'notFound.ts'), notFoundTs);
     await fs.outputFile(path.join(projectPath, 'backend', 'src', 'app', 'middleware', 'sanitizeRequest.ts'), sanitizeRequestTs);
     await fs.outputFile(path.join(projectPath, 'backend', 'src', 'app', 'utils', 'catchAsync.ts'), catchAsyncTs);
+    await fs.outputFile(path.join(projectPath, 'backend', 'src', 'app', 'utils', 'sendResponse.ts'), sendResponseTs);
     await fs.outputFile(path.join(projectPath, 'backend', 'src', 'app', 'utils', 'sanitizer.ts'), sanitizerTs);
     await fs.outputFile(path.join(projectPath, 'backend', 'src', 'app', 'errorHelpers', 'ApiError.ts'), apiErrorTs);
     await fs.outputFile(path.join(projectPath, 'backend', 'prisma', 'schema.prisma'), schemaPrisma);
@@ -398,7 +439,6 @@ export default defineConfig({
     await fs.outputFile(path.join(projectPath, 'backend', '.gitignore'), 'node_modules\ndist\n.env');
     await fs.outputFile(path.join(projectPath, 'backend', '.env'), 'DATABASE_URL="postgresql://user:password@localhost:5432/mydb"\nJWT_SECRET="your-secret-key"');
 
-    // Backend package.json
     const backendPkg = {
       name: `${projectName}-backend`,
       version: '1.0.0',
@@ -446,15 +486,9 @@ export default defineConfig({
 
     spinner.succeed(chalk.green(`✅ Project structure created! ✨`));
 
-    // 7. Dependency Installation
     if (installDeps) {
       console.log(chalk.yellow(`\n📦 Finalizing dependencies with ${packageManager}...\n`));
-      try {
-        execSync(`cd "${path.join(projectPath, 'backend')}" && ${packageManager} install`, { stdio: 'inherit' });
-        console.log(chalk.green(`\n✅ Backend dependencies installed! ✨\n`));
-      } catch (err) {
-        console.log(chalk.red(`\n❌ Step failed. You can manually run '${packageManager} install' in the backend folder.\n`));
-      }
+      runCommand(`cd "${path.join(projectPath, 'backend')}" && ${packageManager} install`);
     }
 
     console.log(chalk.cyan(`To get started:`));
@@ -466,6 +500,170 @@ export default defineConfig({
     console.error(error);
     process.exit(1);
   }
-}
+};
 
-main();
+// --- Command: Generate Module ---
+const generateModule = async (name) => {
+  if (!name) {
+    console.log(chalk.red('❌ Error: Module name is required.'));
+    process.exit(1);
+  }
+
+  const moduleName = name.charAt(0).toUpperCase() + name.slice(1);
+  const lowercaseName = name.toLowerCase();
+  
+  // Check if inside a shakil-stack project
+  const backendRoot = fs.existsSync('backend') ? 'backend' : '.';
+  const moduleDir = path.join(backendRoot, 'src', 'app', 'module', moduleName);
+
+  if (!fs.existsSync(path.join(backendRoot, 'src', 'app', 'module'))) {
+    console.log(chalk.red('❌ Error: This command must be run inside your shakil-stack project root or backend directory.'));
+    process.exit(1);
+  }
+
+  if (fs.existsSync(moduleDir)) {
+    console.log(chalk.red(`❌ Error: Module ${moduleName} already exists.`));
+    process.exit(1);
+  }
+
+  const spinner = ora(`🛠️ Generating module: ${chalk.cyan(moduleName)}...`).start();
+
+  try {
+    await fs.ensureDir(moduleDir);
+
+    const files = {
+      'controller.ts': `import { Request, Response } from 'express';
+import httpStatus from 'http-status';
+import catchAsync from '../../utils/catchAsync.js';
+import sendResponse from '../../utils/sendResponse.js';
+import { ${moduleName}Service } from './${lowercaseName}.service.js';
+
+const create${moduleName} = catchAsync(async (req: Request, res: Response) => {
+  const result = await ${moduleName}Service.create${moduleName}IntoDB(req.body);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: '${moduleName} created successfully',
+    data: result,
+  });
+});
+
+export const ${moduleName}Controller = {
+  create${moduleName},
+};
+`,
+      'service.ts': `import { ${moduleName} } from '@prisma/client';
+import prisma from '../../lib/prisma.js';
+
+const create${moduleName}IntoDB = async (payload: any) => {
+  // Logic here
+  return payload;
+};
+
+export const ${moduleName}Service = {
+  create${moduleName}IntoDB,
+};
+`,
+      'route.ts': `import { Router } from 'express';
+import { ${moduleName}Controller } from './${lowercaseName}.controller.js';
+
+const router = Router();
+
+router.post('/create-${lowercaseName}', ${moduleName}Controller.create${moduleName});
+
+export const ${moduleName}Routes = router;
+`,
+      'interface.ts': `export type I${moduleName} = {
+  // Define interface
+};
+`,
+      'validation.ts': `import { z } from 'zod';
+
+const create${moduleName}ValidationSchema = z.object({
+  body: z.object({
+    // Define schema
+  }),
+});
+
+export const ${moduleName}Validations = {
+  create${moduleName}ValidationSchema,
+};
+`,
+      'constant.ts': `export const ${moduleName}SearchableFields = [];
+`,
+    };
+
+    for (const [ext, content] of Object.entries(files)) {
+      await fs.outputFile(path.join(moduleDir, `${lowercaseName}.${ext}`), content);
+    }
+
+    spinner.succeed(chalk.green(`✅ Module ${moduleName} generated successfully! ✨`));
+    console.log(chalk.gray(`Created at: ${moduleDir}`));
+
+  } catch (error) {
+    spinner.fail(chalk.red('❌ Failed to generate module.'));
+    console.error(error);
+  }
+};
+
+// --- CLI Structure ---
+program
+  .name('shakil-stack')
+  .description('Full-stack EchoNet-style project generator CLI')
+  .version('1.0.0');
+
+program
+  .command('init')
+  .description('Initialize a new full-stack project')
+  .argument('[projectName]', 'Name of the project')
+  .action((projectName) => {
+    initProject(projectName);
+  });
+
+program
+  .command('generate')
+  .alias('g')
+  .description('Generate a new module')
+  .argument('<type>', 'Type of generation (module)')
+  .argument('<name>', 'Name of the module')
+  .action((type, name) => {
+    if (type === 'module') {
+      generateModule(name);
+    } else {
+      console.log(chalk.red(`❌ Error: Unknown generation type: ${type}`));
+    }
+  });
+
+program
+  .command('build')
+  .description('Build the backend for production')
+  .action(() => {
+    const pm = getPackageManager();
+    const backendRoot = fs.existsSync('backend') ? 'backend' : '.';
+    console.log(chalk.cyan(`🏗️ Building backend with ${pm}...`));
+    runCommand(`${pm} run build`, backendRoot);
+  });
+
+program
+  .command('prisma')
+  .description('Prisma utilities')
+  .argument('<subcommand>', 'generate | migrate')
+  .action((subcommand) => {
+    const backendRoot = fs.existsSync('backend') ? 'backend' : '.';
+    if (subcommand === 'generate') {
+      console.log(chalk.cyan('🔄 Generating Prisma client...'));
+      runCommand('npx prisma generate', backendRoot);
+    } else if (subcommand === 'migrate') {
+      console.log(chalk.cyan('🚀 Running Prisma migrations...'));
+      runCommand('npx prisma migrate dev', backendRoot);
+    } else {
+      console.log(chalk.red(`❌ Error: Unknown prisma subcommand: ${subcommand}`));
+    }
+  });
+
+// Handle default action (no command)
+if (!process.argv.slice(2).length) {
+    initProject();
+} else {
+    program.parse(process.argv);
+}
