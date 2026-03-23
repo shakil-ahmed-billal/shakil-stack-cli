@@ -69,7 +69,7 @@ After the generator finishes, follow these steps to start your development:
 
 - `pnpm dev`: Starts the server with `tsx` and `nodemon`.
 - `pnpm build`: Builds the project using `tsup`.
-- `pnpm start`: Runs the built project from `dist/`.
+- `pnpm start`: Runs the built project from  `dist/`.
 
 ## 🤝 Contributing
 
