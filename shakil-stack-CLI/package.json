@@ -4,7 +4,7 @@
   "description": "Full-stack EchoNet-style project generator CLI",
   "main": "./bin/index.js",
   "bin": {
-    "shakil-stack": "./bin/index.js"
+    "shakil-stack": "bin/index.js"
   },
   "publishConfig": {
     "access": "public"
