@@ -76,4 +76,4 @@ After the generator finishes, follow these steps to start your development:
 Feel free to open issues or submit pull requests to improve the Shakil-Stack generator!
 
 ---
-Developed with ❤️ by **Shakil Ahmed Billal**
+Developed with by **Shakil Ahmed Billal**
