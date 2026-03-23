@@ -444,9 +444,23 @@ export default sendResponse;
       version: '1.0.0',
       type: "module",
       scripts: {
+        "test": "echo \"Error: no test specified\" && exit 1",
         "dev": "nodemon --exec tsx src/server.ts",
-        "build": "tsup src/server.ts --format esm --platform node --target node20 --outDir dist",
+        "build": "prisma generate && tsup src/server.ts --format esm --platform node --target node20 --outDir dist --external pg-native",
+        "postinstall": "prisma generate",
         "start": "node dist/server.js",
+        "prisma:generate": "prisma generate",
+        "prisma:migrate": "prisma migrate dev",
+        "prisma:studio": "prisma studio",
+        "seed": "tsx prisma/seed.ts",
+        "setup": "pnpm install && pnpm add @prisma/adapter-pg pg && pnpm add -D @types/pg && pnpm prisma:generate",
+        "predev": "pnpm run prisma:generate",
+        "init": "pnpm run prisma:generate && pnpm run prisma:migrate --name init",
+        "lint": "eslint src/**/*.ts",
+        "lint:fix": "eslint src/**/*.ts --fix",
+        "format": "prettier --write .",
+        "push": "prisma db push",
+        "pull": "prisma db pull"
       },
       dependencies: {
         "@prisma/adapter-pg": "^7.5.0",
@@ -479,7 +493,9 @@ export default sendResponse;
         "tsx": "^4.21.0",
         "nodemon": "^3.1.14",
         "tsup": "^8.5.1",
-        "typescript": "^5.9.3"
+        "typescript": "^5.9.3",
+        "eslint": "^9.21.0",
+        "prettier": "^3.5.2"
       }
     };
     await fs.writeJson(path.join(projectPath, 'backend', 'package.json'), backendPkg, { spaces: 2 });

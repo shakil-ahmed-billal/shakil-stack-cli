@@ -1,7 +1,18 @@
 {
   "name": "@shakil-dev/shakil-stack",
-  "version": "1.2.0",
+  "version": "1.4.0",
   "description": "Full-stack EchoNet-style project generator CLI",
+  "keywords": [
+    "shakil-stack",
+    "echonet",
+    "prisma",
+    "nextjs",
+    "express",
+    "better-auth",
+    "fullstack",
+    "generator",
+    "cli"
+  ],
   "main": "./bin/index.js",
   "bin": {
     "shakil-stack": "bin/index.js"
