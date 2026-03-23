@@ -29,6 +29,12 @@
 
 ---
 
+## 📖 Documentation & Guides
+Check out our detailed guide for a thorough walkthrough of building with Shakil-Stack:
+👉 [**Shakil-Stack CLI Mastering Guide**](https://xhakil.vercel.app/blog/shakil-stack-cli-guide)
+
+---
+
 ## 🚀 Commands Guide
 
 ### 1. Initialize a New Project
