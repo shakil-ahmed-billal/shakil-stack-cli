@@ -1,11 +1,14 @@
 import fs from "fs-extra";
 import path from "path";
+import crypto from "crypto";
 import chalk from "chalk";
 import ora from "ora";
 import inquirer from "inquirer";
 import { runCommand, getPackageManager } from "../utils/index.js";
 import * as templates from "../templates/backend.js";
 import * as rootTemplates from "../templates/root.js";
+import * as authTemplates from "../templates/authModule.js";
+import * as frontendAuthTemplates from "../templates/frontendAuth.js";
 
 
 export const initProject = async (projectNameArg?: string) => {
@@ -28,7 +31,7 @@ export const initProject = async (projectNameArg?: string) => {
     process.exit(1);
   }
 
-  const { packageManager, useShadcn, installDeps } = await inquirer.prompt([
+  const { packageManager, useShadcn, installDeps, setupPrisma, setupBetterAuth, setupApi, setupLogin, setupGit } = await inquirer.prompt([
     {
       type: "list",
       name: "packageManager",
@@ -44,20 +47,52 @@ export const initProject = async (projectNameArg?: string) => {
     },
     {
       type: "confirm",
+      name: "setupPrisma",
+      message: "Would you like to setup Prisma?",
+      default: true,
+    },
+    {
+      type: "confirm",
+      name: "setupBetterAuth",
+      message: "Would you like to setup Better-Auth?",
+      default: true,
+    },
+    {
+      type: "confirm",
+      name: "setupApi",
+      message: "Would you like to setup API modules (AuthController, etc.)?",
+      default: true,
+    },
+    {
+      type: "confirm",
+      name: "setupLogin",
+      message: "Would you like to setup Frontend Login/Register pages?",
+      default: true,
+    },
+    {
+      type: "confirm",
       name: "installDeps",
       message: "Do you want to install dependencies automatically?",
       default: true,
     },
+    {
+      type: "confirm",
+      name: "setupGit",
+      message: "Would you like to setup Git with automatic version control?",
+      default: true,
+    },
   ]);
 
-  const projectPath = path.join(process.cwd(), projectName);
+  const isCurrentDir = projectName === "." || projectName === "./";
+  const projectPath = isCurrentDir ? process.cwd() : path.join(process.cwd(), projectName);
+  const displayProjectName = isCurrentDir ? path.basename(process.cwd()) : projectName;
 
-  if (fs.existsSync(projectPath)) {
+  if (!isCurrentDir && fs.existsSync(projectPath)) {
     console.log(chalk.red(`❌ Error: Directory ${projectName} already exists.`));
     process.exit(1);
   }
 
-  console.log(chalk.cyan(`\n🚀 Initializing ${chalk.bold(projectName)}...\n`));
+  console.log(chalk.cyan(`\n🚀 Initializing ${chalk.bold(displayProjectName)} in ${isCurrentDir ? "current directory" : projectName}...\n`));
 
   const spinner = ora("🛠️ Creating project structure...").start();
 
@@ -71,7 +106,14 @@ export const initProject = async (projectNameArg?: string) => {
     await fs.ensureDir(path.join(projectPath, "backend", "src", "app", "middleware"));
     await fs.ensureDir(path.join(projectPath, "backend", "src", "app", "utils"));
     await fs.ensureDir(path.join(projectPath, "backend", "src", "app", "errorHelpers"));
-    await fs.ensureDir(path.join(projectPath, "backend", "prisma", "schema"));
+    
+    if (setupPrisma) {
+        await fs.ensureDir(path.join(projectPath, "backend", "prisma", "schema"));
+    }
+
+    if (setupApi) {
+        await fs.ensureDir(path.join(projectPath, "backend", "src", "app", "module", "auth"));
+    }
 
     // Frontend Scaffold
     console.log(chalk.cyan("\n🖼️ Scaffolding Next.js frontend..."));
@@ -82,6 +124,9 @@ export const initProject = async (projectNameArg?: string) => {
 
     // Initial Directories in Frontend
     const frontendExtraFolders = ["config", "hooks", "lib", "services", "types"];
+    if (setupApi) frontendExtraFolders.push("lib/axios");
+    if (setupLogin) frontendExtraFolders.push("components/auth", "app/(auth)/login", "app/(auth)/register");
+    
     for (const folder of frontendExtraFolders) {
       await fs.ensureDir(path.join(projectPath, "frontend", "src", folder));
     }
@@ -123,24 +168,29 @@ export const initProject = async (projectNameArg?: string) => {
     // Writing Backend Files
     await fs.outputFile(
       path.join(projectPath, "backend", "src", "server.ts"),
-      templates.serverTs(projectName)
+      templates.serverTs(displayProjectName)
     );
     await fs.outputFile(
       path.join(projectPath, "backend", "src", "app.ts"),
-      templates.appTs(projectName)
+      templates.appTs(displayProjectName)
     );
     await fs.outputFile(
       path.join(projectPath, "backend", "src", "app", "config", "index.ts"),
       templates.configTs
     );
-    await fs.outputFile(
-      path.join(projectPath, "backend", "src", "app", "lib", "prisma.ts"),
-      templates.prismaTs
-    );
-    await fs.outputFile(
-      path.join(projectPath, "backend", "src", "app", "lib", "auth.ts"),
-      templates.authTs
-    );
+    if (setupPrisma) {
+        await fs.outputFile(
+          path.join(projectPath, "backend", "src", "app", "lib", "prisma.ts"),
+          templates.prismaTs
+        );
+    }
+    
+    if (setupBetterAuth) {
+        await fs.outputFile(
+          path.join(projectPath, "backend", "src", "app", "lib", "auth.ts"),
+          templates.authTs
+        );
+    }
     await fs.outputFile(
       path.join(projectPath, "backend", "src", "app", "routes", "index.ts"),
       templates.routesTs
@@ -158,6 +208,10 @@ export const initProject = async (projectNameArg?: string) => {
       templates.sanitizeRequestTs
     );
     await fs.outputFile(
+      path.join(projectPath, "backend", "src", "app", "middleware", "validateRequest.ts"),
+      templates.validateRequestTs
+    );
+    await fs.outputFile(
       path.join(projectPath, "backend", "src", "app", "utils", "catchAsync.ts"),
       templates.catchAsyncTs
     );
@@ -173,18 +227,99 @@ export const initProject = async (projectNameArg?: string) => {
       path.join(projectPath, "backend", "src", "app", "errorHelpers", "ApiError.ts"),
       templates.apiErrorTs
     );
-    await fs.outputFile(
-      path.join(projectPath, "backend", "prisma", "schema", "schema.prisma"),
-      templates.basePrisma
-    );
-    await fs.outputFile(
-      path.join(projectPath, "backend", "prisma", "schema", "auth.prisma"),
-      templates.userPrisma
-    );
-    await fs.outputFile(
-      path.join(projectPath, "backend", "prisma.config.ts"),
-      templates.prismaConfigTs
-    );
+    if (setupPrisma) {
+        await fs.outputFile(
+          path.join(projectPath, "backend", "prisma", "schema", "schema.prisma"),
+          templates.basePrisma
+        );
+        if (setupBetterAuth) {
+            await fs.outputFile(
+                path.join(projectPath, "backend", "prisma", "schema", "auth.prisma"),
+                templates.userPrisma
+            );
+        }
+        await fs.outputFile(
+          path.join(projectPath, "backend", "prisma.config.ts"),
+          templates.prismaConfigTs
+        );
+    }
+
+    // Backend Auth Module
+    if (setupApi) {
+        await fs.outputFile(
+          path.join(projectPath, "backend", "src", "app", "module", "auth", "auth.controller.ts"),
+          authTemplates.authControllerTs
+        );
+        await fs.outputFile(
+          path.join(projectPath, "backend", "src", "app", "module", "auth", "auth.service.ts"),
+          authTemplates.authServiceTs
+        );
+        await fs.outputFile(
+          path.join(projectPath, "backend", "src", "app", "module", "auth", "auth.route.ts"),
+          authTemplates.authRouteTs
+        );
+        await fs.outputFile(
+          path.join(projectPath, "backend", "src", "app", "module", "auth", "auth.interface.ts"),
+          authTemplates.authInterfaceTs
+        );
+        await fs.outputFile(
+          path.join(projectPath, "backend", "src", "app", "module", "auth", "auth.validation.ts"),
+          authTemplates.authValidationTs
+        );
+
+        // Backend Auth Utils
+        await fs.outputFile(
+          path.join(projectPath, "backend", "src", "app", "utils", "jwt.ts"),
+          templates.jwtTs
+        );
+        await fs.outputFile(
+          path.join(projectPath, "backend", "src", "app", "utils", "cookie.ts"),
+          templates.cookieTs
+        );
+        await fs.outputFile(
+          path.join(projectPath, "backend", "src", "app", "utils", "token.ts"),
+          templates.tokenTs
+        );
+    }
+
+    // Frontend Auth
+    if (setupApi) {
+        await fs.outputFile(
+          path.join(projectPath, "frontend", "src", "lib", "axios", "httpClient.ts"),
+          frontendAuthTemplates.httpClientTs
+        );
+        await fs.outputFile(
+            path.join(projectPath, "frontend", "src", "lib", "tokenUtils.ts"),
+            frontendAuthTemplates.tokenUtilsTs
+          );
+          await fs.outputFile(
+            path.join(projectPath, "frontend", "src", "lib", "cookieUtils.ts"),
+            frontendAuthTemplates.cookieUtilsTs
+          );
+          await fs.outputFile(
+            path.join(projectPath, "frontend", "src", "services", "auth.actions.ts"),
+            frontendAuthTemplates.authActionsTs
+          );
+    }
+
+    if (setupLogin) {
+        await fs.outputFile(
+          path.join(projectPath, "frontend", "src", "components", "auth", "login-form.tsx"),
+          frontendAuthTemplates.loginFormTsx
+        );
+        await fs.outputFile(
+          path.join(projectPath, "frontend", "src", "components", "auth", "register-form.tsx"),
+          frontendAuthTemplates.registerFormTsx
+        );
+        await fs.outputFile(
+          path.join(projectPath, "frontend", "src", "app", "(auth)", "login", "page.tsx"),
+          frontendAuthTemplates.authPageTsx('login')
+        );
+        await fs.outputFile(
+          path.join(projectPath, "frontend", "src", "app", "(auth)", "register", "page.tsx"),
+          frontendAuthTemplates.authPageTsx('register')
+        );
+    }
     await fs.outputFile(
       path.join(projectPath, "backend", "tsconfig.json"),
       templates.tsconfigTs
@@ -199,19 +334,26 @@ export const initProject = async (projectNameArg?: string) => {
     );
     await fs.outputFile(
       path.join(projectPath, "README.md"),
-      rootTemplates.readme(projectName)
+      rootTemplates.readme(displayProjectName)
     );
     await fs.outputFile(
       path.join(projectPath, "CODE_OF_CONDUCT.md"),
       rootTemplates.codeOfConduct
     );
+    const jwtSecret = crypto.randomBytes(32).toString("hex");
+    const betterAuthSecret = crypto.randomBytes(32).toString("hex");
+
     await fs.outputFile(
       path.join(projectPath, ".env"),
-      `DATABASE_URL="postgresql://postgres:postgres@localhost:5432/${projectName}"\nJWT_SECRET="your-secret-key"\nNODE_ENV="development"\nPORT=8000\nBETTER_AUTH_BASE_URL="http://localhost:8000"\nCLIENT_URL="http://localhost:3000"`
+      `DATABASE_URL="postgresql://postgres:postgres@localhost:5432/${displayProjectName}"\nJWT_SECRET="${jwtSecret}"\nBETTER_AUTH_SECRET="${betterAuthSecret}"\nNODE_ENV="development"\nPORT=8000\nBETTER_AUTH_BASE_URL="http://localhost:8000"\nCLIENT_URL="http://localhost:3000"\nNEXT_PUBLIC_API_URL="http://localhost:8000/api/v1"`
+    );
+    await fs.outputFile(
+      path.join(projectPath, "package.json"),
+      rootTemplates.packageJson(displayProjectName)
     );
 
     const backendPkg = {
-      name: `${projectName}-backend`,
+      name: `${displayProjectName}-backend`,
       version: "1.0.0",
       type: "module",
       scripts: {
@@ -236,9 +378,12 @@ export const initProject = async (projectNameArg?: string) => {
         pull: "prisma db pull",
       },
       dependencies: {
-        "@prisma/adapter-pg": "^7.5.0",
-        "@prisma/client": "^7.5.0",
-        "better-auth": "^1.5.6",
+        ...(setupPrisma ? {
+            "@prisma/adapter-pg": "^7.5.0",
+            "@prisma/client": "^7.5.0",
+            "pg": "^8.20.0",
+        } : {}),
+        ...(setupBetterAuth ? { "better-auth": "^1.5.6" } : {}),
         "cookie-parser": "^1.4.7",
         cors: "^2.8.6",
         dompurify: "^3.3.3",
@@ -250,7 +395,6 @@ export const initProject = async (projectNameArg?: string) => {
         jsdom: "^29.0.1",
         jsonwebtoken: "^9.0.3",
         morgan: "^1.10.1",
-        pg: "^8.20.0",
         winston: "^3.19.0",
         zod: "^4.3.6",
       },
@@ -259,10 +403,9 @@ export const initProject = async (projectNameArg?: string) => {
         "@types/cors": "^2.8.19",
         "@types/express": "^5.0.6",
         "@types/node": "^20.19.37",
-        "@types/pg": "^8.20.0",
+        ...(setupPrisma ? { "@types/pg": "^8.20.0", "prisma": "^7.5.0" } : {}),
         "@types/morgan": "^1.9.10",
         "@types/jsdom": "^21.1.7",
-        prisma: "^7.5.0",
         tsx: "^4.21.0",
         nodemon: "^3.1.14",
         tsup: "^8.5.1",
@@ -277,13 +420,49 @@ export const initProject = async (projectNameArg?: string) => {
 
     if (installDeps) {
       console.log(chalk.yellow(`\n📦 Finalizing dependencies with ${packageManager}...\n`));
+      runCommand(`${packageManager} install`, projectPath); // Install in root
       runCommand(`${packageManager} install`, path.join(projectPath, "backend"));
+      
+      if (setupApi || setupLogin) {
+          console.log(chalk.yellow(`\n📦 Adding frontend auth dependencies...\n`));
+          const frontendDeps = ["axios"];
+          if (setupLogin) frontendDeps.push("react-hook-form", "zod", "@hookform/resolvers/zod", "@tanstack/react-query");
+          
+          runCommand(
+            `${packageManager} add ${frontendDeps.join(" ")}`,
+            path.join(projectPath, "frontend")
+          );
+      }
     }
 
-    console.log(chalk.cyan(`To get started:`));
-    console.log(chalk.white(`  cd ${projectName}`));
-    console.log(chalk.white(`  cd backend && ${packageManager} dev\n`));
-    console.log(chalk.white(`  cd frontend && ${packageManager} dev\n`));
+    // Setup Git
+    if (setupGit) {
+      console.log(chalk.cyan("\n Git Initializing..."));
+      try {
+        // Remove nested .git in frontend if exists
+        const frontendGitPath = path.join(projectPath, "frontend", ".git");
+        if (fs.existsSync(frontendGitPath)) {
+          await fs.remove(frontendGitPath);
+        }
+
+        runCommand(`git init`, projectPath);
+        runCommand(`git add .`, projectPath);
+        runCommand(`git commit -m "Initial commit from shakil-stack"`, projectPath);
+        console.log(chalk.green(" Git initialized successfully!"));
+      } catch (err) {
+        console.log(chalk.yellow("⚠️ Warning: Failed to initialize Git."));
+      }
+    }
+
+    console.log(chalk.cyan(`\n🔥 Your project is ready! Follow these steps to start:\n`));
+    if (projectName !== "./" && projectName !== ".") {
+      console.log(chalk.white(`  1. ${chalk.bold(`cd ${projectName}`)}`));
+    }
+    console.log(chalk.white(`  2. Ensure your ${chalk.bold("PostgreSQL")} database is running.`));
+    console.log(chalk.white(`  3. Update ${chalk.bold(".env")} credentials if needed.`));
+    console.log(chalk.white(`  4. ${chalk.bold(`pnpm dev:backend`)} (Starts server & Prisma Studio)`));
+    console.log(chalk.white(`  5. ${chalk.bold(`pnpm dev:frontend`)} (Starts Next.js application)`));
+    console.log(chalk.green(`\nHappy coding! 🚀\n`));
   } catch (error) {
     spinner.fail(chalk.red("❌ Failed to initialize project."));
     console.error(error);

@@ -4,6 +4,8 @@ import chalk from "chalk";
 import ora from "ora";
 import * as templates from "../templates/backend.js";
 import * as rootTemplates from "../templates/root.js";
+import * as authTemplates from "../templates/authModule.js";
+import * as frontendAuthTemplates from "../templates/frontendAuth.js";
 
 export const updateProject = async () => {
     const projectPath = process.cwd();
@@ -40,7 +42,9 @@ export const updateProject = async () => {
         // 2. Ensure new environment variables are present
         const requiredEnvVars = [
             `BETTER_AUTH_BASE_URL="http://localhost:8000"`,
-            `CLIENT_URL="http://localhost:3000"`
+            `CLIENT_URL="http://localhost:3000"`,
+            `JWT_ACCESS_EXPIRES_IN="1h"`,
+            `JWT_REFRESH_EXPIRES_IN="7d"`
         ];
 
         let updatedEnvContent = envContent;
@@ -69,12 +73,60 @@ export const updateProject = async () => {
             await fs.outputFile(file.path, file.content);
         }
 
+        // 3.1. Scaffold Auth Module if missing
+        const authModulePath = path.join(backendPath, "src", "app", "module", "auth");
+        await fs.ensureDir(authModulePath);
+        
+        const authModuleFiles = [
+            { path: path.join(authModulePath, "auth.controller.ts"), content: authTemplates.authControllerTs },
+            { path: path.join(authModulePath, "auth.service.ts"), content: authTemplates.authServiceTs },
+            { path: path.join(authModulePath, "auth.route.ts"), content: authTemplates.authRouteTs },
+            { path: path.join(authModulePath, "auth.interface.ts"), content: authTemplates.authInterfaceTs },
+            { path: path.join(authModulePath, "auth.validation.ts"), content: authTemplates.authValidationTs },
+            { path: path.join(backendPath, "src", "app", "utils", "jwt.ts"), content: templates.jwtTs },
+            { path: path.join(backendPath, "src", "app", "utils", "cookie.ts"), content: templates.cookieTs },
+            { path: path.join(backendPath, "src", "app", "utils", "token.ts"), content: templates.tokenTs },
+            { path: path.join(backendPath, "prisma", "schema", "auth.prisma"), content: templates.userPrisma }
+        ];
+
+        for (const file of authModuleFiles) {
+            if (!fs.existsSync(file.path)) {
+                await fs.outputFile(file.path, file.content);
+                console.log(chalk.cyan(`🆕 Added ${path.basename(file.path)} to auth module.`));
+            }
+        }
+
+        // 3.2. Update Frontend Auth if frontend exists
+        const frontendPath = path.join(projectPath, "frontend");
+        if (fs.existsSync(frontendPath)) {
+            const frontendAuthFiles = [
+                { path: path.join(frontendPath, "src", "lib", "axios", "httpClient.ts"), content: frontendAuthTemplates.httpClientTs },
+                { path: path.join(frontendPath, "src", "lib", "tokenUtils.ts"), content: frontendAuthTemplates.tokenUtilsTs },
+                { path: path.join(frontendPath, "src", "lib", "cookieUtils.ts"), content: frontendAuthTemplates.cookieUtilsTs },
+                { path: path.join(frontendPath, "src", "services", "auth.actions.ts"), content: frontendAuthTemplates.authActionsTs },
+                { path: path.join(frontendPath, "src", "components", "auth", "login-form.tsx"), content: frontendAuthTemplates.loginFormTsx },
+                { path: path.join(frontendPath, "src", "components", "auth", "register-form.tsx"), content: frontendAuthTemplates.registerFormTsx },
+                { path: path.join(frontendPath, "src", "app", "(auth)", "login", "page.tsx"), content: frontendAuthTemplates.authPageTsx('login') },
+                { path: path.join(frontendPath, "src", "app", "(auth)", "register", "page.tsx"), content: frontendAuthTemplates.authPageTsx('register') }
+            ];
+
+            for (const file of frontendAuthFiles) {
+                if (!fs.existsSync(file.path)) {
+                    await fs.outputFile(file.path, file.content);
+                    console.log(chalk.cyan(`🆕 Added ${path.basename(file.path)} to frontend.`));
+                }
+            }
+        }
+
+        const displayProjectName = path.basename(projectPath);
+
         // 4. Add Root Meta Files if missing
         const rootFiles = [
             { path: path.join(projectPath, ".gitignore"), content: rootTemplates.gitignore },
             { path: path.join(projectPath, "LICENSE"), content: rootTemplates.license },
-            { path: path.join(projectPath, "README.md"), content: rootTemplates.readme(projectName) },
-            { path: path.join(projectPath, "CODE_OF_CONDUCT.md"), content: rootTemplates.codeOfConduct }
+            { path: path.join(projectPath, "README.md"), content: rootTemplates.readme(displayProjectName) },
+            { path: path.join(projectPath, "CODE_OF_CONDUCT.md"), content: rootTemplates.codeOfConduct },
+            { path: path.join(projectPath, "package.json"), content: rootTemplates.packageJson(displayProjectName) }
         ];
 
         for (const file of rootFiles) {

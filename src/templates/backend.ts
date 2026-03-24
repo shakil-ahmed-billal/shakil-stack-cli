@@ -2,10 +2,38 @@ export const serverTs = (projectName: string) => `import { Server } from 'http';
 import app from './app.js';
 import config from './app/config/index.js';
 
+let server: Server;
+
 async function bootstrap() {
   try {
-    const server: Server = app.listen(config.port, () => {
+    server = app.listen(config.port, () => {
       console.log(\`🚀 Server is running on http://localhost:\${config.port}\`);
+    });
+
+    const exitHandler = () => {
+      if (server) {
+        server.close(() => {
+          console.log('🛑 Server closed');
+          process.exit(1);
+        });
+      } else {
+        process.exit(1);
+      }
+    };
+
+    const unexpectedErrorHandler = (error: unknown) => {
+      console.error('❌ Unexpected error:', error);
+      exitHandler();
+    };
+
+    process.on('uncaughtException', unexpectedErrorHandler);
+    process.on('unhandledRejection', unexpectedErrorHandler);
+
+    process.on('SIGTERM', () => {
+      console.log('SIGTERM received');
+      if (server) {
+        server.close();
+      }
     });
   } catch (error) {
     console.error('Failed to start server:', error);
@@ -79,13 +107,16 @@ export default {
     port: process.env.PORT || 8000,
     database_url: process.env.DATABASE_URL,
     jwt_secret: process.env.JWT_SECRET,
+    better_auth_secret: process.env.BETTER_AUTH_SECRET,
+    jwt_access_expires_in: process.env.JWT_ACCESS_EXPIRES_IN || '1h',
+    jwt_refresh_expires_in: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
     better_auth_base_url: process.env.BETTER_AUTH_BASE_URL,
     client_url: process.env.CLIENT_URL,
 };
 `;
 
 export const prismaTs = `import "dotenv/config";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "../../../generated/prisma/index.js";
 import pkg from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 import config from '../config/index.js';
@@ -109,7 +140,7 @@ export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
-  secret: config.jwt_secret,
+  secret: config.better_auth_secret,
   baseURL: config.better_auth_base_url,
   trustedOrigins: [config.client_url as string],
   emailAndPassword: {
@@ -118,8 +149,20 @@ export const auth = betterAuth({
 });
 `;
 
-export const routesTs = `import { Router } from 'express';
+export const routesTs = `import { Router } from "express";
+import { AuthRoutes } from "../module/auth/auth.route.js";
+
 const router = Router();
+
+const moduleRoutes = [
+  {
+    path: "/auth",
+    route: AuthRoutes,
+  },
+];
+
+moduleRoutes.forEach((route) => router.use(route.path, route.route));
+
 export default router;
 `;
 
@@ -238,7 +281,6 @@ export const basePrisma = `generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 `;
 
@@ -280,9 +322,12 @@ model Account {
 }
 `;
 
-export const prismaConfigTs = `import "dotenv/config";
-import { defineConfig } from "prisma/config";
+export const prismaConfigTs = `import dotenv from "dotenv";
+import path from "path";
 import process from "process";
+import { defineConfig } from "prisma/config";
+
+dotenv.config({ path: path.join(process.cwd(), "..", ".env") });
 
 export default defineConfig({
   schema: "prisma/schema",
@@ -290,6 +335,99 @@ export default defineConfig({
     url: process.env.DATABASE_URL,
   },
 });
+`;
+
+export const jwtTs = `import jwt, { JwtPayload, SignOptions } from 'jsonwebtoken';
+
+const createToken = (payload: Record<string, unknown>, secret: string, options: SignOptions) => {
+  return jwt.sign(payload, secret, options);
+};
+
+const verifyToken = (token: string, secret: string) => {
+  try {
+    const decoded = jwt.verify(token, secret);
+    return { success: true, data: decoded as JwtPayload };
+  } catch (error) {
+    return { success: false, error };
+  }
+};
+
+export const jwtUtils = { createToken, verifyToken };
+`;
+
+export const cookieTs = `import { CookieOptions, Request, Response } from "express";
+
+const setCookie = (res: Response, key: string, value: string, options: CookieOptions) => {
+    res.cookie(key, value, options);
+}
+
+const getCookie = (req: Request, key: string) => {
+    return req.cookies?.[key];
+}
+
+const clearCookie = (res: Response, key: string, options: CookieOptions) => {
+    res.clearCookie(key, options);
+}
+
+export const CookieUtils = {
+    setCookie,
+    getCookie,
+    clearCookie,
+};
+`;
+
+export const tokenTs = `import { Response } from "express";
+import { JwtPayload, SignOptions } from "jsonwebtoken";
+import config from "../config/index.js";
+import { jwtUtils } from "./jwt.js";
+
+const getAccessToken = (payload: JwtPayload) => {
+    return jwtUtils.createToken(
+        payload,
+        config.jwt_secret as string,
+        { expiresIn: config.jwt_access_expires_in } as SignOptions
+    );
+}
+
+const getRefreshToken = (payload: JwtPayload) => {
+    return jwtUtils.createToken(
+        payload,
+        config.jwt_secret as string,
+        { expiresIn: config.jwt_refresh_expires_in } as SignOptions
+    );
+}
+
+export const setAccessTokenCookie = (res: Response, token: string) => {
+    res.cookie('accessToken', token, {
+        httpOnly: true,
+        secure: config.env === 'production',
+        sameSite: config.env === 'production' ? 'none' : 'lax',
+        maxAge: 3600000, // 1 hour
+        path: '/',
+    });
+};
+
+export const setRefreshTokenCookie = (res: Response, token: string) => {
+    res.cookie('refreshToken', token, {
+        httpOnly: true,
+        secure: config.env === 'production',
+        sameSite: config.env === 'production' ? 'none' : 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        path: '/',
+    });
+};
+
+export const setBetterAuthSessionCookie = (res: Response, token: string) => {
+    res.cookie('better-auth.session_token', token, {
+        httpOnly: true,
+        secure: config.env === 'production',
+        sameSite: config.env === 'production' ? 'none' : 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+        path: '/',
+    });
+};
+
+export const tokenUtils = { getAccessToken, getRefreshToken, setAccessTokenCookie, setRefreshTokenCookie, setBetterAuthSessionCookie };
 `;
 
 export const tsconfigTs = `{
@@ -311,4 +449,25 @@ export const tsconfigTs = `{
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
 }
+`;
+export const validateRequestTs = `import { NextFunction, Request, Response } from 'express';
+import type { AnyZodObject } from 'zod';
+
+const validateRequest = (schema: AnyZodObject) => {
+  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      await schema.parseAsync({
+        body: req.body,
+        query: req.query,
+        params: req.params,
+        cookies: req.cookies,
+      });
+      return next();
+    } catch (error) {
+      next(error);
+    }
+  };
+};
+
+export default validateRequest;
 `;
