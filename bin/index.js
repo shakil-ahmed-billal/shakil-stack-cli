@@ -349,7 +349,6 @@ export const sanitizeRequest = (req: Request, res: Response, next: NextFunction)
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model User {
