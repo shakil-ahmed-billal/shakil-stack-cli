@@ -5,6 +5,8 @@ import ora from "ora";
 import inquirer from "inquirer";
 import { runCommand, getPackageManager } from "../utils/index.js";
 import * as templates from "../templates/backend.js";
+import * as rootTemplates from "../templates/root.js";
+
 
 export const initProject = async (projectNameArg?: string) => {
   let projectName = projectNameArg;
@@ -196,12 +198,24 @@ export const initProject = async (projectNameArg?: string) => {
       templates.tsconfigTs
     );
     await fs.outputFile(
-      path.join(projectPath, "backend", ".gitignore"),
-      "node_modules\ndist\n.env"
+      path.join(projectPath, ".gitignore"),
+      rootTemplates.gitignore
     );
     await fs.outputFile(
-      path.join(projectPath, "backend", ".env"),
-      'DATABASE_URL="postgresql://user:password@localhost:5432/mydb"\nJWT_SECRET="your-secret-key"'
+      path.join(projectPath, "LICENSE"),
+      rootTemplates.license
+    );
+    await fs.outputFile(
+      path.join(projectPath, "README.md"),
+      rootTemplates.readme(projectName)
+    );
+    await fs.outputFile(
+      path.join(projectPath, "CODE_OF_CONDUCT.md"),
+      rootTemplates.codeOfConduct
+    );
+    await fs.outputFile(
+      path.join(projectPath, ".env"),
+      `DATABASE_URL="postgresql://postgres:postgres@localhost:5432/${projectName}"\nJWT_SECRET="your-secret-key"\nNODE_ENV="development"\nPORT=8000`
     );
 
     const backendPkg = {
