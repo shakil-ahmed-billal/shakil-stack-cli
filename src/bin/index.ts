@@ -7,6 +7,7 @@ import { initProject } from "../commands/init.js";
 import { generateModule } from "../commands/module.js";
 import { buildBackend } from "../commands/build.js";
 import { handlePrisma } from "../commands/prisma.js";
+import { updateProject } from "../commands/update.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -29,6 +30,13 @@ program
   .argument("[projectName]", "Name of the project")
   .action((projectName) => {
     initProject(projectName);
+  });
+
+program
+  .command("update")
+  .description("Update an existing project to the latest shakil-stack version")
+  .action(() => {
+    updateProject();
   });
 
 program

@@ -6,10 +6,10 @@ export const handlePrisma = async (subcommand: string) => {
     const backendRoot = fs.existsSync('backend') ? 'backend' : '.';
     if (subcommand === 'generate') {
       console.log(chalk.cyan('🔄 Generating Prisma client...'));
-      runCommand('npx prisma generate', backendRoot);
+      runCommand('npx prisma generate --schema prisma/schema', backendRoot);
     } else if (subcommand === 'migrate') {
       console.log(chalk.cyan('🚀 Running Prisma migrations...'));
-      runCommand('npx prisma migrate dev', backendRoot);
+      runCommand('npx prisma migrate dev --schema prisma/schema', backendRoot);
     } else {
       console.log(chalk.red(`❌ Error: Unknown prisma subcommand: ${subcommand}`));
     }

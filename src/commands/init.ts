@@ -207,7 +207,7 @@ export const initProject = async (projectNameArg?: string) => {
     );
     await fs.outputFile(
       path.join(projectPath, ".env"),
-      `DATABASE_URL="postgresql://postgres:postgres@localhost:5432/${projectName}"\nJWT_SECRET="your-secret-key"\nNODE_ENV="development"\nPORT=8000`
+      `DATABASE_URL="postgresql://postgres:postgres@localhost:5432/${projectName}"\nJWT_SECRET="your-secret-key"\nNODE_ENV="development"\nPORT=8000\nBETTER_AUTH_BASE_URL="http://localhost:8000"\nCLIENT_URL="http://localhost:3000"`
     );
 
     const backendPkg = {

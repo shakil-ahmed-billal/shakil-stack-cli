@@ -26,12 +26,13 @@ import morgan from 'morgan';
 import helmet from 'helmet';
 import { rateLimit } from 'express-rate-limit';
 import { sanitizeRequest } from './app/middleware/sanitizeRequest.js';
+import config from './app/config/index.js';
 
 const app: Application = express();
 
 app.use(helmet());
 app.use(cors({ 
-    origin: ["http://localhost:3000", "http://127.0.0.1:3000"], 
+    origin: [config.client_url as string, "http://localhost:3000", "http://127.0.0.1:3000"], 
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "Cookie"]
@@ -78,6 +79,8 @@ export default {
     port: process.env.PORT || 8000,
     database_url: process.env.DATABASE_URL,
     jwt_secret: process.env.JWT_SECRET,
+    better_auth_base_url: process.env.BETTER_AUTH_BASE_URL,
+    client_url: process.env.CLIENT_URL,
 };
 `;
 
@@ -107,8 +110,8 @@ export const auth = betterAuth({
     provider: "postgresql",
   }),
   secret: config.jwt_secret,
-  baseURL: "http://localhost:8000",
-  trustedOrigins: ["http://localhost:3000"],
+  baseURL: config.better_auth_base_url,
+  trustedOrigins: [config.client_url as string],
   emailAndPassword: {
     enabled: true,
   },
@@ -235,6 +238,7 @@ export const basePrisma = `generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 `;
 
