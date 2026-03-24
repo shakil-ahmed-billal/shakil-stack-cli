@@ -181,14 +181,6 @@ export const initProject = async (projectNameArg?: string) => {
       path.join(projectPath, "backend", "prisma", "schema", "auth.prisma"),
       templates.userPrisma
     );
-    // Create empty modular schema files
-    const extraSchemas = ["meal.prisma", "order.prisma", "provider.prisma", "review.prisma"];
-    for (const schema of extraSchemas) {
-        await fs.outputFile(
-          path.join(projectPath, "backend", "prisma", "schema", schema),
-          `// \${schema.split('.')[0].charAt(0).toUpperCase() + schema.split('.')[0].slice(1)} model\n`
-        );
-    }
     await fs.outputFile(
       path.join(projectPath, "backend", "prisma.config.ts"),
       templates.prismaConfigTs
