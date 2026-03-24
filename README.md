@@ -10,7 +10,7 @@
 
 ## 🌟 Key Features
 
-### 🛡️ Backend Excellence (EchoNet Style)
+### 🛡️ Backend Excellence (Professional Coding Style)
 - **Modular Architecture**: Clean, scalable `src/app/module` pattern.
 - **Prisma 7+**: Next-gen database ORM with pre-configured PostgreSQL adapters.
 - **Better Auth Integration**: Pre-built authentication schemas (User, Session, Account).
