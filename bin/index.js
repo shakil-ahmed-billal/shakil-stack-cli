@@ -343,15 +343,17 @@ export const sanitizeRequest = (req: Request, res: Response, next: NextFunction)
 };
 `;
 
-    const schemaPrisma = `generator client {
+    const basePrisma = `generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["prismaSchemaFolder"]
 }
 
 datasource db {
   provider = "postgresql"
 }
+`;
 
-model User {
+    const userPrisma = `model User {
   id            String    @id @default(uuid())
   email         String    @unique
   name          String
@@ -394,7 +396,7 @@ import { defineConfig } from "prisma/config";
 import process from "process";
 
 export default defineConfig({
-  schema: "prisma/schema.prisma",
+  schema: "prisma/schema",
   datasource: {
     url: process.env.DATABASE_URL,
   },
@@ -462,7 +464,8 @@ export default sendResponse;
     await fs.outputFile(path.join(projectPath, 'backend', 'src', 'app', 'utils', 'sendResponse.ts'), sendResponseTs);
     await fs.outputFile(path.join(projectPath, 'backend', 'src', 'app', 'utils', 'sanitizer.ts'), sanitizerTs);
     await fs.outputFile(path.join(projectPath, 'backend', 'src', 'app', 'errorHelpers', 'ApiError.ts'), apiErrorTs);
-    await fs.outputFile(path.join(projectPath, 'backend', 'prisma', 'schema.prisma'), schemaPrisma);
+    await fs.outputFile(path.join(projectPath, 'backend', 'prisma', 'schema', 'base.prisma'), basePrisma);
+    await fs.outputFile(path.join(projectPath, 'backend', 'prisma', 'schema', 'user.prisma'), userPrisma);
     await fs.outputFile(path.join(projectPath, 'backend', 'prisma.config.ts'), prismaConfigTs);
     await fs.outputFile(path.join(projectPath, 'backend', 'tsconfig.json'), tsconfigTs);
     await fs.outputFile(path.join(projectPath, 'backend', '.gitignore'), 'node_modules\ndist\n.env');
@@ -637,6 +640,16 @@ export const ${moduleName}Validations = {
       'constant.ts': `export const ${moduleName}SearchableFields = [];
 `,
     };
+
+    // Add Prisma schema for the module
+    const modulePrisma = `model ${moduleName} {
+  id        String   @id @default(uuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+`;
+    await fs.outputFile(path.join(backendRoot, 'prisma', 'schema', `${lowercaseName}.prisma`), modulePrisma);
 
     for (const [ext, content] of Object.entries(files)) {
       await fs.outputFile(path.join(moduleDir, `${lowercaseName}.${ext}`), content);
