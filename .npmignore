@@ -1,0 +1,7 @@
+src/
+tsconfig.json
+tsup.config.ts
+.github/
+README.old.md
+bin/index.js
+bin/index.old.js

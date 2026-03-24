@@ -13,9 +13,10 @@
     "generator",
     "cli"
   ],
-  "main": "./bin/index.js",
+  "main": "dist/index.js",
+  "type": "module",
   "bin": {
-    "shakil-stack": "bin/index.js"
+    "shakil-stack": "dist/index.js"
   },
   "license": "MIT",
   "repository": {
@@ -30,13 +31,25 @@
     "access": "public"
   },
   "scripts": {
-    "start": "node ./bin/index.js"
+    "build": "tsup src/bin/index.ts --format esm --outDir dist --clean --minify --target node20",
+    "dev": "tsx src/bin/index.ts",
+    "start": "node dist/bin/index.js",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "chalk": "^4.1.2",
     "commander": "^11.1.0",
     "fs-extra": "^11.2.0",
-    "ora": "^5.4.1",
-    "inquirer": "^8.2.6"
+    "inquirer": "^8.2.6",
+    "ora": "^5.4.1"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^11.0.4",
+    "@types/inquirer": "^9.0.9",
+    "@types/node": "^25.5.0",
+    "@types/ora": "^3.2.0",
+    "tsup": "^8.5.1",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.2"
   }
 }
