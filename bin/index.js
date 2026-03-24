@@ -46,13 +46,19 @@ const initProject = async (name) => {
     },
     {
       type: 'confirm',
+      name: 'useShadcn',
+      message: 'Would you like to use shadcn/ui for components?',
+      default: true,
+    },
+    {
+      type: 'confirm',
       name: 'installDeps',
       message: 'Would you like to install dependencies now?',
       default: true,
     },
   ]);
 
-  const { projectName, packageManager, installDeps } = answers;
+  const { projectName, packageManager, installDeps, useShadcn } = answers;
   const projectPath = path.resolve(process.cwd(), projectName);
 
   if (fs.existsSync(projectPath)) {
@@ -97,6 +103,22 @@ const initProject = async (name) => {
     const frontendExtraFolders = ['config', 'hooks', 'lib', 'services', 'types'];
     for (const folder of frontendExtraFolders) {
         await fs.ensureDir(path.join(projectPath, 'frontend', 'src', folder));
+    }
+
+    // Shadcn/UI initialization
+    if (useShadcn) {
+        console.log(chalk.cyan('\n🎨 Setting up shadcn/ui...'));
+        try {
+            // Using non-interactive init with default settings
+            // -d flag uses default options: TypeScript, Tailwind, Lucide Icons, Slate color, css variables
+            execSync(`npx shadcn@latest init -d`, { 
+                cwd: path.join(projectPath, 'frontend'), 
+                stdio: 'inherit' 
+            });
+            console.log(chalk.green('✅ shadcn/ui initialized successfully!✨'));
+        } catch (err) {
+            console.log(chalk.yellow('\n⚠️ Warning: Failed to automate shadcn/ui init. You can run "npx shadcn@latest init" in the frontend folder.'));
+        }
     }
 
     spinner.start(`📂 Finalizing root files and backend code...`);
