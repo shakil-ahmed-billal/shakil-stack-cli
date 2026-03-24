@@ -21,7 +21,7 @@ export const getPackageManager = () => {
   const userAgent = process.env.npm_config_user_agent || "";
   if (userAgent.includes("pnpm")) return "pnpm";
   if (userAgent.includes("yarn")) return "yarn";
-  return "npm";
+  return "pnpm";
 };
 
 /**

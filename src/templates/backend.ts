@@ -285,9 +285,11 @@ datasource db {
 `;
 
 export const userPrisma = `model User {
-  id            String    @id @default(uuid())
+  id            String    @id @default(cuid())
   email         String    @unique
   name          String
+  emailVerified Boolean   @default(false)
+  image         String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   accounts      Account[]
@@ -295,17 +297,19 @@ export const userPrisma = `model User {
 }
 
 model Session {
-  id        String   @id @default(uuid())
+  id        String   @id @default(cuid())
   userId    String
   token     String   @unique
   expiresAt DateTime
+  ipAddress String?
+  userAgent String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Account {
-  id                    String    @id @default(uuid())
+  id                    String    @id @default(cuid())
   userId                String
   accountId             String
   providerId            String
@@ -319,6 +323,15 @@ model Account {
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
   user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 `;
 
@@ -456,12 +469,7 @@ import type { AnyZodObject } from 'zod';
 const validateRequest = (schema: AnyZodObject) => {
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      await schema.parseAsync({
-        body: req.body,
-        query: req.query,
-        params: req.params,
-        cookies: req.cookies,
-      });
+      await schema.parseAsync(req.body);
       return next();
     } catch (error) {
       next(error);

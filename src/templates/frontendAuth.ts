@@ -141,7 +141,7 @@ export function LoginForm() {
     setLoading(true);
     setError(null);
     try {
-      const response = await loginAction({ body: data });
+      const response = await loginAction(data);
       if (response.success) {
         queryClient.invalidateQueries({ queryKey: ["user"] });
         router.push("/dashboard");
@@ -223,7 +223,7 @@ export function RegisterForm() {
     setLoading(true);
     setError(null);
     try {
-      const response = await registerAction({ body: data });
+      const response = await registerAction(data);
       if (response.success) {
         queryClient.invalidateQueries({ queryKey: ["user"] });
         router.push("/dashboard");
@@ -283,6 +283,42 @@ export default function ${type === 'login' ? 'LoginPage' : 'RegisterPage'}() {
         <${type === 'login' ? 'LoginForm' : 'RegisterForm'} />
       </div>
     </div>
+  );
+}
+`;
+
+export const providersTsx = `
+"use client";
+
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactNode, useState } from "react";
+
+export function Providers({ children }: { children: ReactNode }) {
+  const [queryClient] = useState(() => new QueryClient());
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      {children}
+    </QueryClientProvider>
+  );
+}
+`;
+
+export const layoutTsx = `
+import { Providers } from "@/components/Providers";
+import "./globals.css";
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <body>
+        <Providers>{children}</Providers>
+      </body>
+    </html>
   );
 }
 `;

@@ -319,6 +319,14 @@ export const initProject = async (projectNameArg?: string) => {
           path.join(projectPath, "frontend", "src", "app", "(auth)", "register", "page.tsx"),
           frontendAuthTemplates.authPageTsx('register')
         );
+        await fs.outputFile(
+          path.join(projectPath, "frontend", "src", "components", "Providers.tsx"),
+          frontendAuthTemplates.providersTsx
+        );
+        await fs.outputFile(
+          path.join(projectPath, "frontend", "src", "app", "layout.tsx"),
+          frontendAuthTemplates.layoutTsx
+        );
     }
     await fs.outputFile(
       path.join(projectPath, "backend", "tsconfig.json"),
@@ -343,14 +351,29 @@ export const initProject = async (projectNameArg?: string) => {
     const jwtSecret = crypto.randomBytes(32).toString("hex");
     const betterAuthSecret = crypto.randomBytes(32).toString("hex");
 
-    await fs.outputFile(
-      path.join(projectPath, ".env"),
-      `DATABASE_URL="postgresql://postgres:postgres@localhost:5432/${displayProjectName}"\nJWT_SECRET="${jwtSecret}"\nBETTER_AUTH_SECRET="${betterAuthSecret}"\nNODE_ENV="development"\nPORT=8000\nBETTER_AUTH_BASE_URL="http://localhost:8000"\nCLIENT_URL="http://localhost:3000"\nNEXT_PUBLIC_API_URL="http://localhost:8000/api/v1"`
-    );
+    const backendEnvContent = `DATABASE_URL="postgresql://postgres:postgres@localhost:5432/${displayProjectName}"
+JWT_SECRET="${jwtSecret}"
+BETTER_AUTH_SECRET="${betterAuthSecret}"
+NODE_ENV="development"
+PORT=8000
+BETTER_AUTH_BASE_URL="http://localhost:8000"
+CLIENT_URL="http://localhost:3000"`;
+
+    const frontendEnvLocalContent = `NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1`;
+
+    await fs.outputFile(path.join(projectPath, ".env"), backendEnvContent);
+    await fs.outputFile(path.join(projectPath, "frontend", ".env.local"), frontendEnvLocalContent);
     await fs.outputFile(
       path.join(projectPath, "package.json"),
       rootTemplates.packageJson(displayProjectName)
     );
+
+    if (packageManager === "pnpm") {
+      await fs.outputFile(
+        path.join(projectPath, "pnpm-workspace.yaml"),
+        "packages:\n  - 'backend'\n  - 'frontend'\n"
+      );
+    }
 
     const backendPkg = {
       name: `${displayProjectName}-backend`,
@@ -426,11 +449,15 @@ export const initProject = async (projectNameArg?: string) => {
       if (setupApi || setupLogin) {
           console.log(chalk.yellow(`\n📦 Adding frontend auth dependencies...\n`));
           const frontendDeps = ["axios"];
-          if (setupLogin) frontendDeps.push("react-hook-form", "zod", "@hookform/resolvers/zod", "@tanstack/react-query");
+          if (setupLogin) frontendDeps.push("react-hook-form", "zod", "@hookform/resolvers", "@tanstack/react-query");
+          
+          const addCommand = packageManager === "pnpm" 
+            ? `${packageManager} add ${frontendDeps.join(" ")} --filter ./frontend`
+            : `${packageManager} add ${frontendDeps.join(" ")}`;
           
           runCommand(
-            `${packageManager} add ${frontendDeps.join(" ")}`,
-            path.join(projectPath, "frontend")
+            addCommand,
+            projectPath
           );
       }
     }
