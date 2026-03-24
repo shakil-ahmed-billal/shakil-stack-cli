@@ -115,7 +115,15 @@ const initProject = async (name) => {
                 cwd: path.join(projectPath, 'frontend'), 
                 stdio: 'inherit' 
             });
-            console.log(chalk.green('✅ shadcn/ui initialized successfully!✨'));
+
+            console.log(chalk.cyan('📦 Adding common shadcn/ui components...'));
+            const commonComponents = ['button', 'card', 'input', 'label', 'textarea', 'dialog', 'dropdown-menu', 'table', 'tabs', 'checkbox'];
+            execSync(`npx shadcn@latest add ${commonComponents.join(' ')} -y`, { 
+                cwd: path.join(projectPath, 'frontend'), 
+                stdio: 'inherit' 
+            });
+
+            console.log(chalk.green('✅ shadcn/ui and common components initialized successfully!✨'));
         } catch (err) {
             console.log(chalk.yellow('\n⚠️ Warning: Failed to automate shadcn/ui init. You can run "npx shadcn@latest init" in the frontend folder.'));
         }
