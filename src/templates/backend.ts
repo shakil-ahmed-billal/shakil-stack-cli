@@ -231,6 +231,7 @@ export default sendResponse;
 export const basePrisma = `generator client {
   provider = "prisma-client-js"
   previewFeatures = ["prismaSchemaFolder"]
+  output   = "../../generated/prisma"
 }
 
 datasource db {
