@@ -130,7 +130,6 @@ import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { ShieldCheck, ArrowRight } from "lucide-react";
 import { Logo } from "@/components/logo";
-import { Logo } from "@/components/logo";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),

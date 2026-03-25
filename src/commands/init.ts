@@ -446,15 +446,23 @@ export const initProject = async (projectNameArg?: string) => {
 
     // ─── Branding Assets (Logo & Favicons) ────────────────────────────────
     try {
+      // After tsup build, assets are at dist/templates/public-assets
+      // __dirname = dist/, so "templates/public-assets" is the correct relative path
       await fs.copy(
-        path.join(__dirname, "../templates/public-assets"),
+        path.join(__dirname, "templates/public-assets"),
         path.join(projectPath, "frontend", "public"),
         { overwrite: true }
       );
-      // Remove default Next.js favicon so it doesn't conflict with custom metadata
+      // Remove default Next.js favicon from /src/app so it doesn't conflict
       await fs.remove(path.join(projectPath, "frontend", "src", "app", "favicon.ico"));
+      // Remove default Next.js placeholder SVGs from public/
+      const defaultNextSvgs = ["file.svg", "globe.svg", "next.svg", "vercel.svg", "window.svg"];
+      for (const svg of defaultNextSvgs) {
+        await fs.remove(path.join(projectPath, "frontend", "public", svg));
+      }
+      console.log(chalk.green("✅ Branding assets copied to frontend/public/"));
     } catch (e) {
-      // Fallback in case directory isn't found
+      console.log(chalk.yellow("⚠️  Could not copy branding assets. Copy them manually from the CLI package."));
     }
 
     // Shadcn/UI initialization

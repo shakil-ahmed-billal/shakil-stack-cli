@@ -119,7 +119,7 @@ export default function LandingPage() {
         <section className="py-24 md:py-32 relative overflow-hidden">
            <div className="absolute inset-0 bg-primary/5" />
            <div className="container mx-auto px-4 md:px-8 relative z-10">
-            <div className="max-w-4xl mx-auto rounded-3xl bg-primary px-6 py-16 md:px-16 md:py-20 text-center text-primary-foreground shadow-2xl overflow-hidden relative">
+            <div className="mx-auto rounded-3xl bg-primary px-6 py-16 md:px-16 md:py-20 text-center text-primary-foreground shadow-2xl overflow-hidden relative">
               {/* Decorative elements inside CTA */}
               <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
                 <div className="absolute -top-24 -right-24 w-96 h-96 bg-white/10 rounded-full blur-3xl" />
