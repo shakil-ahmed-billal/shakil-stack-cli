@@ -569,13 +569,6 @@ CLIENT_URL="http://localhost:3000"`;
       rootTemplates.packageJson(displayProjectName)
     );
 
-    if (packageManager === "pnpm") {
-      await fs.outputFile(
-        path.join(projectPath, "pnpm-workspace.yaml"),
-        "packages:\n  - 'backend'\n  - 'frontend'\n"
-      );
-    }
-
     const backendPkg = {
       name: `${displayProjectName}-backend`,
       version: "1.0.0",
@@ -619,20 +612,21 @@ CLIENT_URL="http://localhost:3000"`;
         jsonwebtoken: "^9.0.3",
         morgan: "^1.10.1",
         winston: "^3.19.0",
-        zod: "^4.3.6",
+        zod: "^3.24.2",
       },
       devDependencies: {
         "@types/cookie-parser": "^1.4.10",
         "@types/cors": "^2.8.19",
         "@types/dompurify": "^3.0.5",
         "@types/express": "^5.0.6",
+        "@types/jsonwebtoken": "^9.0.8",
         "@types/node": "^20.19.37",
         ...(setupPrisma ? { "@types/pg": "^8.20.0", "prisma": "^7.5.0" } : {}),
         "@types/morgan": "^1.9.10",
         tsx: "^4.21.0",
         nodemon: "^3.1.14",
         tsup: "^8.5.1",
-        typescript: "^5.9.3",
+        typescript: "^5.7.3",
         eslint: "^9.21.0",
         prettier: "^3.5.2",
       },
@@ -641,9 +635,27 @@ CLIENT_URL="http://localhost:3000"`;
 
     spinner.succeed(chalk.green(`✅ Project structure created! ✨`));
 
+    if (packageManager === "pnpm") {
+      await fs.outputFile(
+        path.join(projectPath, "pnpm-workspace.yaml"),
+        "packages:\n  - 'backend'\n  - 'frontend'\n"
+      );
+    }
+
     if (installDeps) {
-      console.log(chalk.yellow(`\n📦 Finalizing dependencies with ${packageManager}...\n`));
+      console.log(chalk.yellow(`\n📦 Initializing dependencies with ${packageManager}...\n`));
       runCommand(`${packageManager} install`, projectPath); // Install in root
+
+      // After create-next-app and pnpm install, remove local frontend lockfiles to avoid workspace conflicts
+      if (packageManager === "pnpm") {
+        const frontendLockfiles = ["pnpm-lock.yaml", "package-lock.json", "yarn.lock"];
+        for (const lockfile of frontendLockfiles) {
+          const lockfilePath = path.join(projectPath, "frontend", lockfile);
+          if (fs.existsSync(lockfilePath)) {
+            await fs.remove(lockfilePath);
+          }
+        }
+      }
       
       console.log(chalk.yellow(`\n📦 Adding frontend dependencies...\n`));
 
@@ -673,6 +685,10 @@ CLIENT_URL="http://localhost:3000"`;
         : `${packageManager} add ${coreDeps.join(" ")}`;
 
       runCommand(addCommand, projectPath);
+
+      // Final reconciliation to ensure lockfile is up to date
+      console.log(chalk.yellow(`\n📦 Finalizing lockfile synchronization...\n`));
+      runCommand(`${packageManager} install`, projectPath);
     }
 
     // Setup Git
