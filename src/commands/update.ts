@@ -2,10 +2,9 @@ import fs from "fs-extra";
 import path from "path";
 import chalk from "chalk";
 import ora from "ora";
-import * as templates from "../templates/backend.js";
-import * as rootTemplates from "../templates/root.js";
-import * as authTemplates from "../templates/authModule.js";
-import * as frontendAuthTemplates from "../templates/frontendAuth.js";
+import * as templates from "../templates/backend/index.js";
+import * as rootTemplates from "../templates/root/index.js";
+import * as frontendAuthTemplates from "../templates/frontend/index.js";
 
 export const updateProject = async () => {
     const projectPath = process.cwd();
@@ -78,11 +77,11 @@ export const updateProject = async () => {
         await fs.ensureDir(authModulePath);
         
         const authModuleFiles = [
-            { path: path.join(authModulePath, "auth.controller.ts"), content: authTemplates.authControllerTs },
-            { path: path.join(authModulePath, "auth.service.ts"), content: authTemplates.authServiceTs },
-            { path: path.join(authModulePath, "auth.route.ts"), content: authTemplates.authRouteTs },
-            { path: path.join(authModulePath, "auth.interface.ts"), content: authTemplates.authInterfaceTs },
-            { path: path.join(authModulePath, "auth.validation.ts"), content: authTemplates.authValidationTs },
+            { path: path.join(authModulePath, "auth.controller.ts"), content: templates.authControllerTs },
+            { path: path.join(authModulePath, "auth.service.ts"), content: templates.authServiceTs },
+            { path: path.join(authModulePath, "auth.route.ts"), content: templates.authRouteTs },
+            { path: path.join(authModulePath, "auth.interface.ts"), content: templates.authInterfaceTs },
+            { path: path.join(authModulePath, "auth.validation.ts"), content: templates.authValidationTs },
             { path: path.join(backendPath, "src", "app", "utils", "jwt.ts"), content: templates.jwtTs },
             { path: path.join(backendPath, "src", "app", "utils", "cookie.ts"), content: templates.cookieTs },
             { path: path.join(backendPath, "src", "app", "utils", "token.ts"), content: templates.tokenTs },

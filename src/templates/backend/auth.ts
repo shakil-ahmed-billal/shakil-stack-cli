@@ -1,3 +1,21 @@
+export const authTs = `import { betterAuth } from "better-auth";
+import { prismaAdapter } from "better-auth/adapters/prisma";
+import config from "../config/index.js";
+import { prisma } from "./prisma.js";
+
+export const auth = betterAuth({
+  database: prismaAdapter(prisma, {
+    provider: "postgresql",
+  }),
+  secret: config.better_auth_secret,
+  baseURL: config.better_auth_base_url,
+  trustedOrigins: [config.client_url as string],
+  emailAndPassword: {
+    enabled: true,
+  },
+});
+`;
+
 export const authControllerTs = `import { Request, Response } from "express";
 import httpStatus from "http-status";
 import { AuthService } from "./auth.service.js";
@@ -193,3 +211,4 @@ export const AuthValidation = {
   loginValidationSchema,
 };
 `;
+

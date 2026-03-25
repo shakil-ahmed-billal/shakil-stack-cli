@@ -5,10 +5,9 @@ import chalk from "chalk";
 import ora from "ora";
 import inquirer from "inquirer";
 import { runCommand, getPackageManager } from "../utils/index.js";
-import * as templates from "../templates/backend.js";
-import * as rootTemplates from "../templates/root.js";
-import * as authTemplates from "../templates/authModule.js";
-import * as frontendAuthTemplates from "../templates/frontendAuth.js";
+import * as templates from "../templates/backend/index.js";
+import * as rootTemplates from "../templates/root/index.js";
+import * as frontendAuthTemplates from "../templates/frontend/index.js";
 
 
 export const initProject = async (projectNameArg?: string) => {
@@ -31,7 +30,7 @@ export const initProject = async (projectNameArg?: string) => {
     process.exit(1);
   }
 
-  const { packageManager, useShadcn, installDeps, setupPrisma, setupBetterAuth, setupApi, setupLogin, setupGit } = await inquirer.prompt([
+  const { packageManager, useShadcn, installDeps, setupPrisma, setupBetterAuth, setupApi, setupLogin, setupDarkMode, setupNavbarFooter, setupDashboard, setupGit } = await inquirer.prompt([
     {
       type: "list",
       name: "packageManager",
@@ -67,6 +66,24 @@ export const initProject = async (projectNameArg?: string) => {
       type: "confirm",
       name: "setupLogin",
       message: "Would you like to setup Frontend Login/Register pages?",
+      default: true,
+    },
+    {
+      type: "confirm",
+      name: "setupDarkMode",
+      message: "Would you like to setup Dark Mode (next-themes)?",
+      default: true,
+    },
+    {
+      type: "confirm",
+      name: "setupNavbarFooter",
+      message: "Would you like to add a Navbar & Footer (@shadcnblocks)?",
+      default: true,
+    },
+    {
+      type: "confirm",
+      name: "setupDashboard",
+      message: "Would you like to setup a Dashboard with Sidebar?",
       default: true,
     },
     {
@@ -126,43 +143,11 @@ export const initProject = async (projectNameArg?: string) => {
     const frontendExtraFolders = ["config", "hooks", "lib", "services", "types"];
     if (setupApi) frontendExtraFolders.push("lib/axios");
     if (setupLogin) frontendExtraFolders.push("components/auth", "app/(auth)/login", "app/(auth)/register");
+    if (setupDashboard) frontendExtraFolders.push("app/dashboard");
+    if (setupNavbarFooter) frontendExtraFolders.push("app/(main)");
     
     for (const folder of frontendExtraFolders) {
       await fs.ensureDir(path.join(projectPath, "frontend", "src", folder));
-    }
-
-    // Shadcn/UI initialization
-    if (useShadcn) {
-      console.log(chalk.cyan("\n🎨 Setting up shadcn/ui..."));
-      try {
-        runCommand(`npx shadcn@latest init -d`, path.join(projectPath, "frontend"));
-
-        console.log(chalk.cyan("📦 Adding common shadcn/ui components..."));
-        const commonComponents = [
-          "button",
-          "card",
-          "input",
-          "label",
-          "textarea",
-          "dialog",
-          "dropdown-menu",
-          "table",
-          "tabs",
-          "checkbox",
-        ];
-        runCommand(
-          `npx shadcn@latest add ${commonComponents.join(" ")} -y`,
-          path.join(projectPath, "frontend")
-        );
-
-        console.log(chalk.green("✅ shadcn/ui and common components initialized successfully!✨"));
-      } catch (err) {
-        console.log(
-          chalk.yellow(
-            '\n⚠️ Warning: Failed to automate shadcn/ui init. You can run "npx shadcn@latest init" in the frontend folder.'
-          )
-        );
-      }
     }
 
     // Writing Backend Files
@@ -248,23 +233,23 @@ export const initProject = async (projectNameArg?: string) => {
     if (setupApi) {
         await fs.outputFile(
           path.join(projectPath, "backend", "src", "app", "module", "auth", "auth.controller.ts"),
-          authTemplates.authControllerTs
+          templates.authControllerTs
         );
         await fs.outputFile(
           path.join(projectPath, "backend", "src", "app", "module", "auth", "auth.service.ts"),
-          authTemplates.authServiceTs
+          templates.authServiceTs
         );
         await fs.outputFile(
           path.join(projectPath, "backend", "src", "app", "module", "auth", "auth.route.ts"),
-          authTemplates.authRouteTs
+          templates.authRouteTs
         );
         await fs.outputFile(
           path.join(projectPath, "backend", "src", "app", "module", "auth", "auth.interface.ts"),
-          authTemplates.authInterfaceTs
+          templates.authInterfaceTs
         );
         await fs.outputFile(
           path.join(projectPath, "backend", "src", "app", "module", "auth", "auth.validation.ts"),
-          authTemplates.authValidationTs
+          templates.authValidationTs
         );
 
         // Backend Auth Utils
@@ -282,24 +267,28 @@ export const initProject = async (projectNameArg?: string) => {
         );
     }
 
-    // Frontend Auth
+    // ─── Frontend Auth ─────────────────────────────────────────────────
     if (setupApi) {
         await fs.outputFile(
           path.join(projectPath, "frontend", "src", "lib", "axios", "httpClient.ts"),
           frontendAuthTemplates.httpClientTs
         );
         await fs.outputFile(
-            path.join(projectPath, "frontend", "src", "lib", "tokenUtils.ts"),
-            frontendAuthTemplates.tokenUtilsTs
-          );
-          await fs.outputFile(
-            path.join(projectPath, "frontend", "src", "lib", "cookieUtils.ts"),
-            frontendAuthTemplates.cookieUtilsTs
-          );
-          await fs.outputFile(
-            path.join(projectPath, "frontend", "src", "services", "auth.actions.ts"),
-            frontendAuthTemplates.authActionsTs
-          );
+          path.join(projectPath, "frontend", "src", "lib", "tokenUtils.ts"),
+          frontendAuthTemplates.tokenUtilsTs
+        );
+        await fs.outputFile(
+          path.join(projectPath, "frontend", "src", "lib", "cookieUtils.ts"),
+          frontendAuthTemplates.cookieUtilsTs
+        );
+        await fs.outputFile(
+          path.join(projectPath, "frontend", "src", "lib", "session.ts"),
+          frontendAuthTemplates.sessionTs
+        );
+        await fs.outputFile(
+          path.join(projectPath, "frontend", "src", "services", "auth.actions.ts"),
+          frontendAuthTemplates.authActionsTs
+        );
     }
 
     if (setupLogin) {
@@ -320,14 +309,195 @@ export const initProject = async (projectNameArg?: string) => {
           frontendAuthTemplates.authPageTsx('register')
         );
         await fs.outputFile(
-          path.join(projectPath, "frontend", "src", "components", "Providers.tsx"),
-          frontendAuthTemplates.providersTsx
-        );
-        await fs.outputFile(
-          path.join(projectPath, "frontend", "src", "app", "layout.tsx"),
-          frontendAuthTemplates.layoutTsx
+          path.join(projectPath, "frontend", "src", "app", "(auth)", "layout.tsx"),
+          frontendAuthTemplates.authLayoutTsx
         );
     }
+
+    // ─── Dark Mode ────────────────────────────────────────────────────────
+    await fs.outputFile(
+      path.join(projectPath, "frontend", "src", "components", "theme-provider.tsx"),
+      frontendAuthTemplates.themeProviderTsx
+    );
+    await fs.outputFile(
+      path.join(projectPath, "frontend", "src", "components", "theme-switcher.tsx"),
+      frontendAuthTemplates.themeSwitcherTsx
+    );
+
+    // ─── Navbar + Footer ──────────────────────────────────────────────────
+    await fs.outputFile(
+      path.join(projectPath, "frontend", "src", "components", "logo.tsx"),
+      frontendAuthTemplates.logoTsx
+    );
+    await fs.outputFile(
+      path.join(projectPath, "frontend", "src", "components", "separator.tsx"),
+      frontendAuthTemplates.separatorTsx
+    );
+    await fs.outputFile(
+      path.join(projectPath, "frontend", "src", "components", "navbar.tsx"),
+      frontendAuthTemplates.navbarTsx
+    );
+    await fs.outputFile(
+      path.join(projectPath, "frontend", "src", "components", "user-avatar.tsx"),
+      frontendAuthTemplates.userAvatarTsx
+    );
+    await fs.outputFile(
+      path.join(projectPath, "frontend", "src", "components", "footer.tsx"),
+      frontendAuthTemplates.footerTsx
+    );
+    await fs.outputFile(
+      path.join(projectPath, "frontend", "src", "components", "social-links.tsx"),
+      frontendAuthTemplates.socialLinksTsx
+    );
+
+    // (main) Layout for Navbar/Footer
+    if (setupNavbarFooter) {
+        await fs.outputFile(
+          path.join(projectPath, "frontend", "src", "app", "(main)", "layout.tsx"),
+          frontendAuthTemplates.mainLayoutTsx
+        );
+    }
+
+    // ─── Dashboard ────────────────────────────────────────────────────────
+    if (setupDashboard) {
+        await fs.outputFile(
+          path.join(projectPath, "frontend", "src", "components", "app-sidebar.tsx"),
+          frontendAuthTemplates.appSidebarTsx
+        );
+        await fs.outputFile(
+          path.join(projectPath, "frontend", "src", "components", "nav-main.tsx"),
+          frontendAuthTemplates.navMainTsx
+        );
+        await fs.outputFile(
+          path.join(projectPath, "frontend", "src", "components", "nav-projects.tsx"),
+          frontendAuthTemplates.navProjectsTsx
+        );
+        await fs.outputFile(
+          path.join(projectPath, "frontend", "src", "components", "nav-user.tsx"),
+          frontendAuthTemplates.navUserTsx
+        );
+        await fs.outputFile(
+          path.join(projectPath, "frontend", "src", "components", "team-switcher.tsx"),
+          frontendAuthTemplates.teamSwitcherTsx
+        );
+        await fs.outputFile(
+          path.join(projectPath, "frontend", "src", "app", "dashboard", "page.tsx"),
+          frontendAuthTemplates.dashboardPageTsx
+        );
+        await fs.outputFile(
+          path.join(projectPath, "frontend", "src", "app", "dashboard", "layout.tsx"),
+          frontendAuthTemplates.dashboardLayoutTsx
+        );
+    }
+
+    // ─── Landing Page ─────────────────────────────────────────────────────
+    if (setupNavbarFooter) {
+      // Delete the default page.tsx if we're using the (main) layout group
+      await fs.remove(path.join(projectPath, "frontend", "src", "app", "page.tsx"));
+    }
+    await fs.outputFile(
+      path.join(projectPath, "frontend", "src", "app", setupNavbarFooter ? "(main)/page.tsx" : "page.tsx"),
+      frontendAuthTemplates.landingPageTsx
+    );
+
+    // ─── Providers + Layout ───────────────────────────────────────────────
+    await fs.outputFile(
+      path.join(projectPath, "frontend", "src", "components", "Providers.tsx"),
+      frontendAuthTemplates.providersTsx
+    );
+    await fs.outputFile(
+      path.join(projectPath, "frontend", "src", "app", "layout.tsx"),
+      frontendAuthTemplates.layoutTsx
+    );
+
+    // ─── MCP Config ───────────────────────────────────────────────────────
+    await fs.outputFile(
+      path.join(projectPath, "frontend", ".mcp.json"),
+      frontendAuthTemplates.mcpJsonConfig
+    );
+    await fs.outputFile(
+      path.join(projectPath, "frontend", ".cursor", "mcp.json"),
+      frontendAuthTemplates.mcpJsonConfig
+    );
+    await fs.outputFile(
+      path.join(projectPath, "frontend", ".antigravity", "mcp.json"),
+      frontendAuthTemplates.mcpJsonConfig
+    );
+
+    // ─── Branding Assets (Logo & Favicons) ────────────────────────────────
+    try {
+      await fs.copy(
+        path.join(__dirname, "../templates/public-assets"),
+        path.join(projectPath, "frontend", "public"),
+        { overwrite: true }
+      );
+      // Remove default Next.js favicon so it doesn't conflict with custom metadata
+      await fs.remove(path.join(projectPath, "frontend", "src", "app", "favicon.ico"));
+    } catch (e) {
+      // Fallback in case directory isn't found
+    }
+
+    // Shadcn/UI initialization
+    if (useShadcn) {
+      console.log(chalk.cyan("\n🎨 Setting up shadcn/ui..."));
+      try {
+        runCommand(`npx shadcn@latest init -d`, path.join(projectPath, "frontend"));
+
+        console.log(chalk.cyan("📦 Adding common shadcn/ui components..."));
+        const commonComponents = [
+          "accordion",
+          "avatar",
+          "breadcrumb",
+          "button",
+          "card",
+          "checkbox",
+          "collapsible",
+          "dialog",
+          "dropdown-menu",
+          "input",
+          "label",
+          "navigation-menu",
+          "separator",
+          "sheet",
+          "sidebar",
+          "skeleton",
+          "sonner",
+          "table",
+          "tabs",
+          "textarea",
+          "tooltip",
+        ];
+        runCommand(
+          `npx shadcn@latest add ${commonComponents.join(" ")} -y`,
+          path.join(projectPath, "frontend")
+        );
+
+        console.log(chalk.green("✅ shadcn/ui and common components initialized successfully!✨"));
+      } catch (err) {
+        console.log(
+          chalk.yellow(
+            '\n⚠️ Warning: Failed to automate shadcn/ui init. You can run "npx shadcn@latest init" in the frontend folder.'
+          )
+        );
+      }
+    }
+
+    // ─── Custom UI Components ──────────────────────────────────────────────
+    console.log(chalk.cyan("\n🧩 Writing custom UI components..."));
+    const uiDir = path.join(projectPath, "frontend", "src", "components", "ui");
+    await fs.ensureDir(uiDir);
+    await fs.outputFile(
+      path.join(uiDir, "field.tsx"),
+      frontendAuthTemplates.fieldTsx
+    );
+    await fs.outputFile(
+      path.join(uiDir, "dropdown-menu.tsx"),
+      frontendAuthTemplates.dropdownMenuTsx
+    );
+    await fs.outputFile(
+      path.join(uiDir, "collapsible.tsx"),
+      frontendAuthTemplates.collapsibleTsx
+    );
     await fs.outputFile(
       path.join(projectPath, "backend", "tsconfig.json"),
       templates.tsconfigTs
@@ -383,7 +553,7 @@ CLIENT_URL="http://localhost:3000"`;
         test: 'echo "Error: no test specified" && exit 1',
         dev: "nodemon --exec tsx src/server.ts",
         build:
-          "prisma generate && tsup src/server.ts --format esm --platform node --target node20 --outDir dist --external pg-native",
+          "prisma generate && tsup src/server.ts --format esm --platform node --target node20 --outDir dist --external pg-native --external @prisma/client-runtime-utils",
         postinstall: "prisma generate",
         start: "node dist/server.js",
         "prisma:generate": "prisma generate",
@@ -446,20 +616,34 @@ CLIENT_URL="http://localhost:3000"`;
       runCommand(`${packageManager} install`, projectPath); // Install in root
       runCommand(`${packageManager} install`, path.join(projectPath, "backend"));
       
+      console.log(chalk.yellow(`\n📦 Adding frontend dependencies...\n`));
+
+      // Core UI / styling deps (always installed)
+      const coreDeps = [
+        "lucide-react@latest",
+        "sonner",
+        "clsx",
+        "tailwind-merge",
+        "class-variance-authority",
+        "tailwindcss-animate",
+      ];
+
+      // Auth / form deps
       if (setupApi || setupLogin) {
-          console.log(chalk.yellow(`\n📦 Adding frontend auth dependencies...\n`));
-          const frontendDeps = ["axios"];
-          if (setupLogin) frontendDeps.push("react-hook-form", "zod", "@hookform/resolvers", "@tanstack/react-query");
-          
-          const addCommand = packageManager === "pnpm" 
-            ? `${packageManager} add ${frontendDeps.join(" ")} --filter ./frontend`
-            : `${packageManager} add ${frontendDeps.join(" ")}`;
-          
-          runCommand(
-            addCommand,
-            projectPath
-          );
+        coreDeps.push("axios");
       }
+      if (setupLogin) {
+        coreDeps.push("react-hook-form", "zod", "@hookform/resolvers", "@tanstack/react-query");
+      }
+      if (setupDarkMode) {
+        coreDeps.push("next-themes@^0.4.4");
+      }
+
+      const addCommand = packageManager === "pnpm"
+        ? `${packageManager} add ${coreDeps.join(" ")} --filter ./frontend`
+        : `${packageManager} add ${coreDeps.join(" ")}`;
+
+      runCommand(addCommand, projectPath);
     }
 
     // Setup Git

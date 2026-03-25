@@ -2,7 +2,7 @@ import fs from "fs-extra";
 import path from "path";
 import chalk from "chalk";
 import ora from "ora";
-import * as templates from "../templates/module.js";
+import * as templates from "../templates/module/index.js";
 
 export const generateModule = async (name: string) => {
   if (!name) {

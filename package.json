@@ -31,7 +31,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsup src/bin/index.ts --format esm --outDir dist --clean --minify --target node20",
+    "build": "tsup src/bin/index.ts --format esm --outDir dist --clean --minify --target node20 && mkdir -p dist/templates && cp -r src/templates/public-assets dist/templates/",
     "dev": "tsx src/bin/index.ts",
     "start": "node dist/bin/index.js",
     "prepublishOnly": "npm run build"
