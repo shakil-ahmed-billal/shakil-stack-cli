@@ -236,7 +236,7 @@ export const packageJson = (projectName: string) => `{
       "shadcn"
     ],
     "overrides": {
-      "zod": "^3.24.2"
+      "zod": "^4.3.6"
     },
     "peerDependencyRules": {
       "ignoreMissing": [
@@ -244,7 +244,7 @@ export const packageJson = (projectName: string) => `{
         "node-domexception"
       ],
       "allowedVersions": {
-        "zod": "*",
+        "zod": "^4.3.6",
         "node-domexception": "*"
       }
     }
@@ -262,4 +262,13 @@ export const packageJson = (projectName: string) => `{
     "push": "git add . && git commit -m 'chore: bump version' && git push"
   }
 }
+`;
+
+export const gitattributes = `* text eol=lf
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
 `;

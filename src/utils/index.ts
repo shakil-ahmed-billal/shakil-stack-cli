@@ -7,7 +7,16 @@ import path from "path";
  */
 export const runCommand = (command: string, cwd: string = process.cwd()) => {
   try {
-    execSync(command, { stdio: "inherit", cwd });
+    execSync(command, { 
+      stdio: "inherit", 
+      cwd,
+      env: { 
+        ...process.env, 
+        NPM_CONFIG_UPDATE_NOTIFIER: "false",
+        NPM_CONFIG_LOGLEVEL: "error",
+        NEXT_TELEMETRY_DISABLED: "1"
+      }
+    });
     return true;
   } catch (error) {
     return false;

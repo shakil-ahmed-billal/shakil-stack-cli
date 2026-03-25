@@ -145,7 +145,7 @@ export const initProject = async (projectNameArg?: string) => {
     // Frontend Scaffold
     console.log(chalk.cyan("\n🖼️ Scaffolding Next.js frontend..."));
     runCommand(
-      `npx create-next-app@latest frontend --ts --tailwind --eslint --app --src-dir --import-alias "@/*" --use-${packageManager}`,
+      `npx create-next-app@latest frontend --ts --tailwind --eslint --app --src-dir --import-alias "@/*" --use-${packageManager} --no-react-compiler --no-turbopack --quiet`,
       projectPath
     );
 
@@ -449,15 +449,15 @@ export const initProject = async (projectNameArg?: string) => {
 
     // ─── Branding Assets (Logo & Favicons) ────────────────────────────────
     try {
-      // Use import.meta.url to safely resolve the exact directory of the bundled CLI in ESM
+      // Resolve the templates directory relative to the current file
       const currentFileUrl = import.meta.url;
       const currentDir = path.dirname(fileURLToPath(currentFileUrl));
       
-      await fs.copy(
-        path.join(currentDir, "templates/public-assets"),
-        path.join(projectPath, "frontend", "public"),
-        { overwrite: true }
-      );
+      // The templates/public-assets directory should be at the same level as the entry file in dist/
+      const assetsSrc = path.join(currentDir, "templates", "public-assets");
+      const assetsDest = path.join(projectPath, "frontend", "public");
+
+      await fs.copy(assetsSrc, assetsDest, { overwrite: true });
       // Remove default Next.js favicon from /src/app so it doesn't conflict
       await fs.remove(path.join(projectPath, "frontend", "src", "app", "favicon.ico"));
       // Remove default Next.js placeholder SVGs from public/
@@ -540,6 +540,10 @@ export const initProject = async (projectNameArg?: string) => {
       rootTemplates.gitignore
     );
     await fs.outputFile(
+      path.join(projectPath, ".gitattributes"),
+      rootTemplates.gitattributes
+    );
+    await fs.outputFile(
       path.join(projectPath, "LICENSE"),
       rootTemplates.license
     );
@@ -614,7 +618,7 @@ CLIENT_URL="http://localhost:3000"`;
         jsonwebtoken: "^9.0.3",
         morgan: "^1.10.1",
         winston: "^3.19.0",
-        zod: "^3.24.2",
+        zod: "^4.3.6",
       },
       devDependencies: {
         "@types/cookie-parser": "^1.4.10",
@@ -657,7 +661,7 @@ CLIENT_URL="http://localhost:3000"`;
       if (setupApi || setupLogin) coreDeps["axios"] = "latest";
       if (setupLogin) {
         coreDeps["react-hook-form"] = "latest";
-        coreDeps["zod"] = "latest";
+        coreDeps["zod"] = "^4.3.6";
         coreDeps["@hookform/resolvers"] = "latest";
         coreDeps["@tanstack/react-query"] = "latest";
       }
@@ -685,7 +689,7 @@ CLIENT_URL="http://localhost:3000"`;
       }
 
       console.log(chalk.yellow(`\n📦 Initializing dependencies with ${packageManager}...\n`));
-      runCommand(`${packageManager} install`, projectPath); // Single install pass
+      runCommand(`${packageManager} install --silent`, projectPath); // Single install pass
     }
 
     // Setup Git
