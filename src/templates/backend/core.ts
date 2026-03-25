@@ -132,7 +132,7 @@ moduleRoutes.forEach((route) => router.use(route.path, route.route));
 export default router;
 `;
 
-export const vercelIndexTs = `import app from '../src/app.js';
+export const vercelIndexTs = `import app from './app.js';
 export default app;
 `;
 
@@ -141,7 +141,7 @@ export const vercelJson = `{
   "rewrites": [
     {
       "source": "/(.*)",
-      "destination": "/api/index.ts"
+      "destination": "/dist/index.js"
     }
   ]
 }

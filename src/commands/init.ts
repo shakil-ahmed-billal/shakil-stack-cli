@@ -186,9 +186,8 @@ export const initProject = async (projectNameArg?: string) => {
 
     // ─── Vercel Deployment Config ─────────────────────────────────────────
     if (setupVercel) {
-        await fs.ensureDir(path.join(projectPath, "backend", "api"));
         await fs.outputFile(
-          path.join(projectPath, "backend", "api", "index.ts"),
+          path.join(projectPath, "backend", "src", "index.ts"),
           templates.vercelIndexTs
         );
         await fs.outputFile(
@@ -584,7 +583,7 @@ CLIENT_URL="http://localhost:3000"`;
       scripts: {
         test: 'echo "Error: no test specified" && exit 1',
         dev: "nodemon --exec tsx src/server.ts",
-        build: "prisma generate && tsup src/server.ts --format esm --platform node --target node20 --outDir dist --external pg-native --external @prisma/client-runtime-utils",
+        build: setupVercel ? "prisma generate && tsup src/server.ts src/index.ts --format esm --platform node --target node20 --outDir dist --external pg-native --external @prisma/client-runtime-utils" : "prisma generate && tsup src/server.ts --format esm --platform node --target node20 --outDir dist --external pg-native --external @prisma/client-runtime-utils",
         start: "node dist/server.js",
         "prisma:generate": "prisma generate",
         "prisma:migrate": "prisma migrate dev",
@@ -611,12 +610,12 @@ CLIENT_URL="http://localhost:3000"`;
         "cookie-parser": "^1.4.7",
         cors: "^2.8.6",
         dompurify: "^3.3.3",
+        linkedom: "^0.18.12",
         dotenv: "^17.3.1",
         express: "^5.2.1",
         "express-rate-limit": "^8.3.1",
         helmet: "^8.1.0",
         "http-status": "^2.1.0",
-        jsdom: "^29.0.1",
         jsonwebtoken: "^9.0.3",
         morgan: "^1.10.1",
         winston: "^3.19.0",
@@ -624,13 +623,12 @@ CLIENT_URL="http://localhost:3000"`;
       },
       devDependencies: {
         "@types/cookie-parser": "^1.4.10",
-        "@types/jsonwebtoken": "^9.0.7",
         "@types/cors": "^2.8.19",
+        "@types/dompurify": "^3.0.5",
         "@types/express": "^5.0.6",
         "@types/node": "^20.19.37",
         ...(setupPrisma ? { "@types/pg": "^8.20.0", "prisma": "^7.5.0" } : {}),
         "@types/morgan": "^1.9.10",
-        "@types/jsdom": "^21.1.7",
         tsx: "^4.21.0",
         nodemon: "^3.1.14",
         tsup: "^8.5.1",

@@ -1,5 +1,5 @@
 export const prismaTs = `import "dotenv/config";
-import { PrismaClient } from "../../../generated/prisma/index.js";
+import { PrismaClient } from "@prisma/client";
 import pkg from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 import config from '../config/index.js';
@@ -16,7 +16,6 @@ export { prisma };
 
 export const basePrisma = `generator client {
   provider = "prisma-client-js"
-  output   = "../../generated/prisma"
 }
 
 datasource db {

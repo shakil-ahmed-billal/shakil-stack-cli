@@ -25,14 +25,14 @@ export const apiErrorTs = `class ApiError extends Error {
 export default ApiError;
 `;
 
-export const sanitizerTs = `import { JSDOM } from 'jsdom';
-import createDOMPurify from 'dompurify';
+export const sanitizerTs = `import { parseHTML } from 'linkedom';
+import DOMPurify from 'dompurify';
 
-const window = new JSDOM('').window;
-const DOMPurify = createDOMPurify(window as any);
+const { window } = parseHTML('<html><body></body></html>');
+const purify = DOMPurify(window as any);
 
 export const sanitize = (data: any): any => {
-    if (typeof data === 'string') return DOMPurify.sanitize(data);
+    if (typeof data === 'string') return purify.sanitize(data);
     if (typeof data === 'object' && data !== null) {
         for (const key in data) {
             if (Object.prototype.hasOwnProperty.call(data, key)) data[key] = sanitize(data[key]);
