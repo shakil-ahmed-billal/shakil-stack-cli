@@ -1,5 +1,5 @@
-src/
-tsconfig.json
+# src/
+# tsconfig.json
 tsup.config.ts
 .github/
 README.old.md

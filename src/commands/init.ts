@@ -8,7 +8,10 @@ import { fileURLToPath } from "url";
 import { runCommand, getPackageManager } from "../utils/index.js";
 import * as templates from "../templates/backend/index.js";
 import * as rootTemplates from "../templates/root/index.js";
-import * as frontendAuthTemplates from "../templates/frontend/index.js";
+import * as frontendAuthTemplates from "../templates/frontend/auth/index.js";
+import * as frontendConfigTemplates from "../templates/frontend/config/index.js";
+import * as frontendLayoutTemplates from "../templates/frontend/layout/index.js";
+import * as uiTemplates from "../templates/frontend/ui/index.js";
 
 
 export const initProject = async (projectNameArg?: string) => {
@@ -336,46 +339,48 @@ export const initProject = async (projectNameArg?: string) => {
     }
 
     // ─── Dark Mode ────────────────────────────────────────────────────────
-    await fs.outputFile(
-      path.join(projectPath, "frontend", "src", "components", "theme-provider.tsx"),
-      frontendAuthTemplates.themeProviderTsx
-    );
-    await fs.outputFile(
-      path.join(projectPath, "frontend", "src", "components", "theme-switcher.tsx"),
-      frontendAuthTemplates.themeSwitcherTsx
-    );
+    if (setupDarkMode) {
+      await fs.outputFile(
+        path.join(projectPath, "frontend", "src", "components", "theme-provider.tsx"),
+        frontendConfigTemplates.themeProviderTsx
+      );
+      await fs.outputFile(
+        path.join(projectPath, "frontend", "src", "components", "theme-switcher.tsx"),
+        frontendConfigTemplates.themeSwitcherTsx
+      );
+    }
 
     // ─── Navbar + Footer ──────────────────────────────────────────────────
     await fs.outputFile(
       path.join(projectPath, "frontend", "src", "components", "logo.tsx"),
-      frontendAuthTemplates.logoTsx
+      frontendLayoutTemplates.logoTsx
     );
     await fs.outputFile(
       path.join(projectPath, "frontend", "src", "components", "separator.tsx"),
-      frontendAuthTemplates.separatorTsx
+      frontendLayoutTemplates.separatorTsx
     );
     await fs.outputFile(
       path.join(projectPath, "frontend", "src", "components", "navbar.tsx"),
-      frontendAuthTemplates.navbarTsx
+      frontendLayoutTemplates.navbarTsx
     );
     await fs.outputFile(
       path.join(projectPath, "frontend", "src", "components", "user-avatar.tsx"),
-      frontendAuthTemplates.userAvatarTsx
+      frontendLayoutTemplates.userAvatarTsx
     );
     await fs.outputFile(
       path.join(projectPath, "frontend", "src", "components", "footer.tsx"),
-      frontendAuthTemplates.footerTsx
+      frontendLayoutTemplates.footerTsx
     );
     await fs.outputFile(
       path.join(projectPath, "frontend", "src", "components", "social-links.tsx"),
-      frontendAuthTemplates.socialLinksTsx
+      frontendLayoutTemplates.socialLinksTsx
     );
 
     // (main) Layout for Navbar/Footer
     if (setupNavbarFooter) {
         await fs.outputFile(
           path.join(projectPath, "frontend", "src", "app", "(main)", "layout.tsx"),
-          frontendAuthTemplates.mainLayoutTsx
+          frontendLayoutTemplates.mainLayoutTsx
         );
     }
 
@@ -383,31 +388,31 @@ export const initProject = async (projectNameArg?: string) => {
     if (setupDashboard) {
         await fs.outputFile(
           path.join(projectPath, "frontend", "src", "components", "app-sidebar.tsx"),
-          frontendAuthTemplates.appSidebarTsx
+          frontendLayoutTemplates.appSidebarTsx
         );
         await fs.outputFile(
           path.join(projectPath, "frontend", "src", "components", "nav-main.tsx"),
-          frontendAuthTemplates.navMainTsx
+          frontendLayoutTemplates.navMainTsx
         );
         await fs.outputFile(
           path.join(projectPath, "frontend", "src", "components", "nav-projects.tsx"),
-          frontendAuthTemplates.navProjectsTsx
+          frontendLayoutTemplates.navProjectsTsx
         );
         await fs.outputFile(
           path.join(projectPath, "frontend", "src", "components", "nav-user.tsx"),
-          frontendAuthTemplates.navUserTsx
+          frontendLayoutTemplates.navUserTsx
         );
         await fs.outputFile(
           path.join(projectPath, "frontend", "src", "components", "team-switcher.tsx"),
-          frontendAuthTemplates.teamSwitcherTsx
+          frontendLayoutTemplates.teamSwitcherTsx
         );
         await fs.outputFile(
           path.join(projectPath, "frontend", "src", "app", "dashboard", "page.tsx"),
-          frontendAuthTemplates.dashboardPageTsx
+          frontendLayoutTemplates.dashboardPageTsx
         );
         await fs.outputFile(
           path.join(projectPath, "frontend", "src", "app", "dashboard", "layout.tsx"),
-          frontendAuthTemplates.dashboardLayoutTsx
+          frontendLayoutTemplates.dashboardLayoutTsx
         );
     }
 
@@ -418,32 +423,29 @@ export const initProject = async (projectNameArg?: string) => {
     }
     await fs.outputFile(
       path.join(projectPath, "frontend", "src", "app", setupNavbarFooter ? "(main)/page.tsx" : "page.tsx"),
-      frontendAuthTemplates.landingPageTsx
+      frontendLayoutTemplates.landingPageTsx
     );
 
     // ─── Providers + Layout ───────────────────────────────────────────────
     await fs.outputFile(
       path.join(projectPath, "frontend", "src", "components", "Providers.tsx"),
-      frontendAuthTemplates.providersTsx
+      frontendConfigTemplates.providersTsx
     );
     await fs.outputFile(
       path.join(projectPath, "frontend", "src", "app", "layout.tsx"),
-      frontendAuthTemplates.layoutTsx
+      frontendLayoutTemplates.layoutTsx
     );
 
-    // ─── MCP Config ───────────────────────────────────────────────────────
+    // ─── Config Files ─────────────────────────────────────────────────────
     await fs.outputFile(
       path.join(projectPath, "frontend", ".mcp.json"),
-      frontendAuthTemplates.mcpJsonConfig
+      frontendConfigTemplates.mcpJsonConfig
     );
     await fs.outputFile(
-      path.join(projectPath, "frontend", ".cursor", "mcp.json"),
-      frontendAuthTemplates.mcpJsonConfig
+      path.join(projectPath, "frontend", "next.config.ts"),
+      frontendConfigTemplates.nextConfigTs
     );
-    await fs.outputFile(
-      path.join(projectPath, "frontend", ".antigravity", "mcp.json"),
-      frontendAuthTemplates.mcpJsonConfig
-    );
+    await fs.outputFile(path.join(projectPath, ".npmrc"), rootTemplates.npmrc);
 
     // ─── Branding Assets (Logo & Favicons) ────────────────────────────────
     try {
@@ -519,15 +521,15 @@ export const initProject = async (projectNameArg?: string) => {
     await fs.ensureDir(uiDir);
     await fs.outputFile(
       path.join(uiDir, "field.tsx"),
-      frontendAuthTemplates.fieldTsx
+      uiTemplates.fieldTsx
     );
     await fs.outputFile(
       path.join(uiDir, "dropdown-menu.tsx"),
-      frontendAuthTemplates.dropdownMenuTsx
+      uiTemplates.dropdownMenuTsx
     );
     await fs.outputFile(
       path.join(uiDir, "collapsible.tsx"),
-      frontendAuthTemplates.collapsibleTsx
+      uiTemplates.collapsibleTsx
     );
     await fs.outputFile(
       path.join(projectPath, "backend", "tsconfig.json"),
@@ -617,7 +619,6 @@ CLIENT_URL="http://localhost:3000"`;
       devDependencies: {
         "@types/cookie-parser": "^1.4.10",
         "@types/cors": "^2.8.19",
-        "@types/dompurify": "^3.0.5",
         "@types/express": "^5.0.6",
         "@types/jsonwebtoken": "^9.0.8",
         "@types/node": "^20.19.37",
@@ -643,52 +644,48 @@ CLIENT_URL="http://localhost:3000"`;
     }
 
     if (installDeps) {
-      console.log(chalk.yellow(`\n📦 Initializing dependencies with ${packageManager}...\n`));
-      runCommand(`${packageManager} install`, projectPath); // Install in root
+      // Define core dependencies to be added to frontend/package.json
+      const coreDeps: Record<string, string> = {
+        "lucide-react": "latest",
+        "sonner": "latest",
+        "clsx": "latest",
+        "tailwind-merge": "latest",
+        "class-variance-authority": "latest",
+        "tailwindcss-animate": "latest",
+      };
 
-      // After create-next-app and pnpm install, remove local frontend lockfiles to avoid workspace conflicts
+      if (setupApi || setupLogin) coreDeps["axios"] = "latest";
+      if (setupLogin) {
+        coreDeps["react-hook-form"] = "latest";
+        coreDeps["zod"] = "latest";
+        coreDeps["@hookform/resolvers"] = "latest";
+        coreDeps["@tanstack/react-query"] = "latest";
+      }
+      if (setupDarkMode) coreDeps["next-themes"] = "^0.4.4";
+
+      // Merge dependencies into frontend/package.json
+      console.log(chalk.yellow(`\n📦 Merging frontend dependencies...\n`));
+      const frontendPkgPath = path.join(projectPath, "frontend", "package.json");
+      if (fs.existsSync(frontendPkgPath)) {
+        const frontendPkg = await fs.readJson(frontendPkgPath);
+        frontendPkg.dependencies = { ...frontendPkg.dependencies, ...coreDeps };
+        await fs.writeJson(frontendPkgPath, frontendPkg, { spaces: 2 });
+      }
+
+      // Cleanup local frontend files to avoid workspace conflicts before root install
       if (packageManager === "pnpm") {
-        const frontendLockfiles = ["pnpm-lock.yaml", "package-lock.json", "yarn.lock"];
-        for (const lockfile of frontendLockfiles) {
-          const lockfilePath = path.join(projectPath, "frontend", lockfile);
-          if (fs.existsSync(lockfilePath)) {
-            await fs.remove(lockfilePath);
+        console.log(chalk.yellow(`\n🧹 Cleaning up frontend workspace for ${packageManager}...\n`));
+        const frontendCleanup = ["node_modules", "pnpm-lock.yaml", "package-lock.json", "yarn.lock", "pnpm-workspace.yaml"];
+        for (const item of frontendCleanup) {
+          const itemPath = path.join(projectPath, "frontend", item);
+          if (fs.existsSync(itemPath)) {
+            await fs.remove(itemPath);
           }
         }
       }
-      
-      console.log(chalk.yellow(`\n📦 Adding frontend dependencies...\n`));
 
-      // Core UI / styling deps (always installed)
-      const coreDeps = [
-        "lucide-react@latest",
-        "sonner",
-        "clsx",
-        "tailwind-merge",
-        "class-variance-authority",
-        "tailwindcss-animate",
-      ];
-
-      // Auth / form deps
-      if (setupApi || setupLogin) {
-        coreDeps.push("axios");
-      }
-      if (setupLogin) {
-        coreDeps.push("react-hook-form", "zod", "@hookform/resolvers", "@tanstack/react-query");
-      }
-      if (setupDarkMode) {
-        coreDeps.push("next-themes@^0.4.4");
-      }
-
-      const addCommand = packageManager === "pnpm"
-        ? `${packageManager} add ${coreDeps.join(" ")} --filter ./frontend`
-        : `${packageManager} add ${coreDeps.join(" ")}`;
-
-      runCommand(addCommand, projectPath);
-
-      // Final reconciliation to ensure lockfile is up to date
-      console.log(chalk.yellow(`\n📦 Finalizing lockfile synchronization...\n`));
-      runCommand(`${packageManager} install`, projectPath);
+      console.log(chalk.yellow(`\n📦 Initializing dependencies with ${packageManager}...\n`));
+      runCommand(`${packageManager} install`, projectPath); // Single install pass
     }
 
     // Setup Git

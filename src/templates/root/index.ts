@@ -141,10 +141,47 @@ ${projectName}/
 ---
 Built with ⚡ by **Shakil Ahmed Billal**
 `;
+export const npmrc = `only-built-dependencies[]=@prisma/engines
+only-built-dependencies[]=esbuild
+only-built-dependencies[]=prisma
+only-built-dependencies[]=sharp
+only-built-dependencies[]=msw
+only-built-dependencies[]=unrs-resolver
+only-built-dependencies[]=shadcn
+`;
+
 export const packageJson = (projectName: string) => `{
   "name": "${projectName}",
   "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "packageManager": "pnpm@10.2.0",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/engines",
+      "esbuild",
+      "prisma",
+      "sharp",
+      "msw",
+      "unrs-resolver",
+      "shadcn"
+    ],
+    "overrides": {
+      "zod": "^3.24.2"
+    },
+    "peerDependencyRules": {
+      "ignoreMissing": [
+        "zod",
+        "node-domexception"
+      ],
+      "allowedVersions": {
+        "zod": "*",
+        "node-domexception": "*"
+      }
+    }
+  },
   "workspaces": [
     "backend",
     "frontend"

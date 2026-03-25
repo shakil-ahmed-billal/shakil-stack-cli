@@ -4,7 +4,7 @@ import chalk from "chalk";
 import ora from "ora";
 import * as templates from "../templates/backend/index.js";
 import * as rootTemplates from "../templates/root/index.js";
-import * as frontendAuthTemplates from "../templates/frontend/index.js";
+import * as frontendAuthTemplates from "../templates/frontend/auth/index.js";
 
 export const updateProject = async () => {
     const projectPath = process.cwd();

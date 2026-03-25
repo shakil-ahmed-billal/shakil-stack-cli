@@ -168,7 +168,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
     <div className="grid min-h-screen lg:grid-cols-2">
       <div className="relative hidden lg:flex flex-col bg-muted p-10 text-white dark:border-r">
         <div className="absolute inset-0 bg-primary/20 backdrop-blur-3xl" />
-        <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/80 to-background opacity-90" />
+        <div className="absolute inset-0 bg-linear-to-br from-primary via-primary/80 to-background opacity-90" />
         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20" />
         <div className="absolute inset-0 bg-grid-white/[0.05]" />
 
@@ -338,7 +338,7 @@ export function RegisterForm({ className, ...props }: React.ComponentProps<"div"
     <div className="grid min-h-screen lg:grid-cols-2">
       <div className="relative hidden lg:flex flex-col bg-muted p-10 text-white dark:border-r">
         <div className="absolute inset-0 bg-primary/20 backdrop-blur-3xl" />
-        <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/80 to-background opacity-90" />
+        <div className="absolute inset-0 bg-linear-to-br from-primary via-primary/80 to-background opacity-90" />
         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20" />
         <div className="absolute inset-0 bg-grid-white/[0.05]" />
 
