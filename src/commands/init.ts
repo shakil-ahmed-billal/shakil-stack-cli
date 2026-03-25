@@ -186,8 +186,9 @@ export const initProject = async (projectNameArg?: string) => {
 
     // ─── Vercel Deployment Config ─────────────────────────────────────────
     if (setupVercel) {
+        await fs.ensureDir(path.join(projectPath, "backend", "api"));
         await fs.outputFile(
-          path.join(projectPath, "backend", "src", "index.ts"),
+          path.join(projectPath, "backend", "api", "index.ts"),
           templates.vercelIndexTs
         );
         await fs.outputFile(
@@ -583,11 +584,9 @@ CLIENT_URL="http://localhost:3000"`;
       scripts: {
         test: 'echo "Error: no test specified" && exit 1',
         dev: "nodemon --exec tsx src/server.ts",
-        build: setupVercel
-          ? "prisma generate && tsup src/index.ts --format esm --platform node --target node20 --outDir api --external pg-native --external @prisma/client-runtime-utils"
-          : "prisma generate && tsup src/server.ts --format esm --platform node --target node20 --outDir dist --external pg-native --external @prisma/client-runtime-utils",
+        build: "prisma generate && tsup src/server.ts --format esm --platform node --target node20 --outDir dist --external pg-native --external @prisma/client-runtime-utils",
         postinstall: "prisma generate",
-        start: setupVercel ? "node api/index.js" : "node dist/server.js",
+        start: "node dist/server.js",
         "prisma:generate": "prisma generate",
         "prisma:migrate": "prisma migrate dev",
         "prisma:studio": "prisma studio",
