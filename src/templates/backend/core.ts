@@ -140,14 +140,14 @@ export const vercelJson = `{
   "version": 2,
   "builds": [
     {
-      "src": "api/index.js",
+      "src": "dist/index.js",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "/api/index.js"
+      "dest": "/dist/index.js"
     }
   ]
 }

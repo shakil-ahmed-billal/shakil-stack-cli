@@ -4,6 +4,7 @@ import crypto from "crypto";
 import chalk from "chalk";
 import ora from "ora";
 import inquirer from "inquirer";
+import { fileURLToPath } from "url";
 import { runCommand, getPackageManager } from "../utils/index.js";
 import * as templates from "../templates/backend/index.js";
 import * as rootTemplates from "../templates/root/index.js";
@@ -90,7 +91,7 @@ export const initProject = async (projectNameArg?: string) => {
       type: "confirm",
       name: "setupVercel",
       message: "Would you like to setup Vercel deployment configuration for the backend?",
-      default: false,
+      default: true,
     },
     {
       type: "confirm",
@@ -446,10 +447,12 @@ export const initProject = async (projectNameArg?: string) => {
 
     // ─── Branding Assets (Logo & Favicons) ────────────────────────────────
     try {
-      // After tsup build, assets are at dist/templates/public-assets
-      // __dirname = dist/, so "templates/public-assets" is the correct relative path
+      // Use import.meta.url to safely resolve the exact directory of the bundled CLI in ESM
+      const currentFileUrl = import.meta.url;
+      const currentDir = path.dirname(fileURLToPath(currentFileUrl));
+      
       await fs.copy(
-        path.join(__dirname, "templates/public-assets"),
+        path.join(currentDir, "templates/public-assets"),
         path.join(projectPath, "frontend", "public"),
         { overwrite: true }
       );
@@ -528,7 +531,7 @@ export const initProject = async (projectNameArg?: string) => {
     );
     await fs.outputFile(
       path.join(projectPath, "backend", "tsconfig.json"),
-      templates.tsconfigTs
+      templates.tsconfigTs(setupVercel)
     );
     await fs.outputFile(
       path.join(projectPath, ".gitignore"),
@@ -581,10 +584,10 @@ CLIENT_URL="http://localhost:3000"`;
         test: 'echo "Error: no test specified" && exit 1',
         dev: "nodemon --exec tsx src/server.ts",
         build: setupVercel
-          ? "prisma generate && tsup src/index.ts --format esm --platform node --target node20 --outDir api --external pg-native --external @prisma/client-runtime-utils"
+          ? "prisma generate && tsup src/index.ts --format esm --platform node --target node20 --outDir dist --external pg-native --external @prisma/client-runtime-utils"
           : "prisma generate && tsup src/server.ts --format esm --platform node --target node20 --outDir dist --external pg-native --external @prisma/client-runtime-utils",
         postinstall: "prisma generate",
-        start: setupVercel ? "node api/index.js" : "node dist/server.js",
+        start: setupVercel ? "node dist/index.js" : "node dist/server.js",
         "prisma:generate": "prisma generate",
         "prisma:migrate": "prisma migrate dev",
         "prisma:studio": "prisma studio",

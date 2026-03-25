@@ -1,8 +1,8 @@
-export const tsconfigTs = `{
+export const tsconfigTs = (setupVercel: boolean) => `{
   "compilerOptions": {
     "target": "ES2022",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "module": "${setupVercel ? "esnext" : "NodeNext"}",
+    "moduleResolution": "${setupVercel ? "bundler" : "NodeNext"}",
     "outDir": "./dist",
     "rootDir": "./src",
     "strict": true,
