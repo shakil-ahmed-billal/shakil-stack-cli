@@ -145,7 +145,7 @@ export const packageJson = (projectName: string) => `{
     "build:backend": "cd backend && pnpm build",
     "build:frontend": "cd frontend && pnpm build",
     "version:patch": "npm version patch --no-git-tag-version",
-    "push": "npm version patch && git add . && git commit -m 'chore: bump version' && git push"
+    "push": "git add . && git commit -m 'chore: bump version' && git push"
   }
 }
 `;

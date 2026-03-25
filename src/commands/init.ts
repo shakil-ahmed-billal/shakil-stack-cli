@@ -30,7 +30,7 @@ export const initProject = async (projectNameArg?: string) => {
     process.exit(1);
   }
 
-  const { packageManager, useShadcn, installDeps, setupPrisma, setupBetterAuth, setupApi, setupLogin, setupDarkMode, setupNavbarFooter, setupDashboard, setupGit } = await inquirer.prompt([
+  const { packageManager, useShadcn, installDeps, setupPrisma, setupBetterAuth, setupApi, setupLogin, setupDarkMode, setupNavbarFooter, setupDashboard, setupVercel, setupGit } = await inquirer.prompt([
     {
       type: "list",
       name: "packageManager",
@@ -85,6 +85,12 @@ export const initProject = async (projectNameArg?: string) => {
       name: "setupDashboard",
       message: "Would you like to setup a Dashboard with Sidebar?",
       default: true,
+    },
+    {
+      type: "confirm",
+      name: "setupVercel",
+      message: "Would you like to setup Vercel deployment configuration for the backend?",
+      default: false,
     },
     {
       type: "confirm",
@@ -157,7 +163,7 @@ export const initProject = async (projectNameArg?: string) => {
     );
     await fs.outputFile(
       path.join(projectPath, "backend", "src", "app.ts"),
-      templates.appTs(displayProjectName)
+      setupVercel ? templates.appTsWithVercel(displayProjectName) : templates.appTs(displayProjectName)
     );
     await fs.outputFile(
       path.join(projectPath, "backend", "src", "app", "config", "index.ts"),
@@ -173,8 +179,22 @@ export const initProject = async (projectNameArg?: string) => {
     if (setupBetterAuth) {
         await fs.outputFile(
           path.join(projectPath, "backend", "src", "app", "lib", "auth.ts"),
-          templates.authTs
+          setupVercel ? templates.authTsWithVercel : templates.authTs
         );
+    }
+
+    // ─── Vercel Deployment Config ─────────────────────────────────────────
+    if (setupVercel) {
+        await fs.outputFile(
+          path.join(projectPath, "backend", "src", "index.ts"),
+          templates.vercelIndexTs
+        );
+        await fs.outputFile(
+          path.join(projectPath, "backend", "vercel.json"),
+          templates.vercelJson
+        );
+        console.log(chalk.green("\n☁️  Vercel deployment config written to backend/vercel.json"));
+        console.log(chalk.cyan("   Run \"pnpm build\" in backend, then \"vercel --prod\" to deploy."));
     }
     await fs.outputFile(
       path.join(projectPath, "backend", "src", "app", "routes", "index.ts"),
@@ -552,10 +572,11 @@ CLIENT_URL="http://localhost:3000"`;
       scripts: {
         test: 'echo "Error: no test specified" && exit 1',
         dev: "nodemon --exec tsx src/server.ts",
-        build:
-          "prisma generate && tsup src/server.ts --format esm --platform node --target node20 --outDir dist --external pg-native --external @prisma/client-runtime-utils",
+        build: setupVercel
+          ? "prisma generate && tsup src/index.ts --format esm --platform node --target node20 --outDir api --external pg-native --external @prisma/client-runtime-utils"
+          : "prisma generate && tsup src/server.ts --format esm --platform node --target node20 --outDir dist --external pg-native --external @prisma/client-runtime-utils",
         postinstall: "prisma generate",
-        start: "node dist/server.js",
+        start: setupVercel ? "node api/index.js" : "node dist/server.js",
         "prisma:generate": "prisma generate",
         "prisma:migrate": "prisma migrate dev",
         "prisma:studio": "prisma studio",
