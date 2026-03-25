@@ -584,10 +584,10 @@ CLIENT_URL="http://localhost:3000"`;
         test: 'echo "Error: no test specified" && exit 1',
         dev: "nodemon --exec tsx src/server.ts",
         build: setupVercel
-          ? "prisma generate && tsup src/index.ts --format esm --platform node --target node20 --outDir dist --external pg-native --external @prisma/client-runtime-utils"
+          ? "prisma generate && tsup src/index.ts --format esm --platform node --target node20 --outDir api --external pg-native --external @prisma/client-runtime-utils"
           : "prisma generate && tsup src/server.ts --format esm --platform node --target node20 --outDir dist --external pg-native --external @prisma/client-runtime-utils",
         postinstall: "prisma generate",
-        start: setupVercel ? "node dist/index.js" : "node dist/server.js",
+        start: setupVercel ? "node api/index.js" : "node dist/server.js",
         "prisma:generate": "prisma generate",
         "prisma:migrate": "prisma migrate dev",
         "prisma:studio": "prisma studio",
@@ -625,6 +625,7 @@ CLIENT_URL="http://localhost:3000"`;
       },
       devDependencies: {
         "@types/cookie-parser": "^1.4.10",
+        "@types/jsonwebtoken": "^9.0.7",
         "@types/cors": "^2.8.19",
         "@types/express": "^5.0.6",
         "@types/node": "^20.19.37",

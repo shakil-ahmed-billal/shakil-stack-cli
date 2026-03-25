@@ -37,9 +37,8 @@ export const sanitizeRequest = (req: Request, res: Response, next: NextFunction)
 `;
 
 export const validateRequestTs = `import { NextFunction, Request, Response } from 'express';
-import type { AnyZodObject } from 'zod';
 
-const validateRequest = (schema: AnyZodObject) => {
+const validateRequest = (schema: any) => {
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       await schema.parseAsync(req.body);
