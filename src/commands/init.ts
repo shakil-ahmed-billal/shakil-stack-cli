@@ -644,7 +644,6 @@ CLIENT_URL="http://localhost:3000"`;
     if (installDeps) {
       console.log(chalk.yellow(`\n📦 Finalizing dependencies with ${packageManager}...\n`));
       runCommand(`${packageManager} install`, projectPath); // Install in root
-      runCommand(`${packageManager} install`, path.join(projectPath, "backend"));
       
       console.log(chalk.yellow(`\n📦 Adding frontend dependencies...\n`));
 

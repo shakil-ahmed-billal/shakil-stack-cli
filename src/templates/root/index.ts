@@ -145,6 +145,10 @@ export const packageJson = (projectName: string) => `{
   "name": "${projectName}",
   "version": "1.0.0",
   "private": true,
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
   "scripts": {
     "dev:backend": "cd backend && pnpm dev",
     "dev:frontend": "cd frontend && pnpm dev",
