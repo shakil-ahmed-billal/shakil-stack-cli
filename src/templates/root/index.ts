@@ -100,6 +100,11 @@ version 1.4, available at [http://contributor-covenant.org/version/1/4][version]
 export const gitignore = `node_modules/
 .env
 dist/
+api/
+backend/dist/
+backend/api/
+backend/generated/
+frontend/.next/
 *.log
 .DS_Store
 `;

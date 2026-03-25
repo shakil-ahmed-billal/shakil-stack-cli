@@ -585,7 +585,6 @@ CLIENT_URL="http://localhost:3000"`;
         test: 'echo "Error: no test specified" && exit 1',
         dev: "nodemon --exec tsx src/server.ts",
         build: "prisma generate && tsup src/server.ts --format esm --platform node --target node20 --outDir dist --external pg-native --external @prisma/client-runtime-utils",
-        postinstall: "prisma generate",
         start: "node dist/server.js",
         "prisma:generate": "prisma generate",
         "prisma:migrate": "prisma migrate dev",
@@ -605,6 +604,7 @@ CLIENT_URL="http://localhost:3000"`;
         ...(setupPrisma ? {
             "@prisma/adapter-pg": "^7.5.0",
             "@prisma/client": "^7.5.0",
+            "@prisma/client-runtime-utils": "^7.5.0",
             "pg": "^8.20.0",
         } : {}),
         ...(setupBetterAuth ? { "better-auth": "^1.5.6" } : {}),
